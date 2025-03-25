@@ -1,2 +1,3 @@
 """Any BASE values"""
 SCREEN_SIZE = (800, 600)
+CHESSBOARD_COLORING = [(225, 225, 225), (50, 50, 50)]

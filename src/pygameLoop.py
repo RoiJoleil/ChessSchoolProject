@@ -7,7 +7,8 @@ class Chess:
         pygame.init()
         pygame.display.set_caption('Chess')
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        self.running = True # Boolean 
+        self.running = True # Boolean controlling if the app is running
+        self.chess_board = []
 
     def run(self):
         while self.running:
