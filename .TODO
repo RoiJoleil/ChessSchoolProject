@@ -1,0 +1,10 @@
+# Richard - Tasks
+- Implement the methods 'get_valid_moves' in 'chessBoard.py'.
+- Implement the methods 'is_valid_move' in 'chessBoard.py'.
+- Update pieces to use graphics. Currently placeholder rects are being used to show pieces.
+
+# Joel - Tasks
+- Implement Logic for alternating player turns.
+- Implement Start Screen.
+- Optionally add Bot Selection.
+- Improve implementation of '_initialise_cells' in 'chessBoard.py'. Currently its very ugly, but works.
