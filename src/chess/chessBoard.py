@@ -139,6 +139,7 @@ class ChessBoard:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # Leftclick Event
                 mouse_pos = pygame.mouse.get_pos()
+                mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
                 x, y = self.convert_abs_coords_to_grid_coords(mouse_pos)
                 cell = self.get_cell(x, y)
 

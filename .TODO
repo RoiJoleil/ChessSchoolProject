@@ -8,6 +8,7 @@
 - Implement Start Screen.
 - Optionally add Bot Selection.
 - Improve implementation of '_initialise_cells' in 'chessBoard.py'. Currently its very ugly, but works.
+
 Visualization
     - 3D, pseudo 3D or 2D Symbolic and SVG or PNG
 
