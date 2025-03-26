@@ -1,6 +1,10 @@
+from src.TestCase import TestCase
+
 class IChessPiece:
+    @staticmethod
     def legalMove(oldX:int, oldY:int, newX:int, newY:int):
         pass
+    @staticmethod
     def legalMove(oldPos:str, newPos:str):
         pass
 
@@ -55,3 +59,15 @@ class Pawn():
             return abs(oldPos[1] - newPos[1]) == 1
 
     
+
+class TestPieceMovement(TestCase):
+    @staticmethod
+    def TestMovement(self):
+        self.TestIsEqual(Rook.legalMove(1,1,1,2), True)
+        self.TestIsEqual(Rook.legalMove(1,2,1,2), False)
+        self.TestIsEqual(Rook.legalMove(2,1,1,1), True)
+        self.TestIsEqual(Rook.legalMove(1,2,1,2), False)
+        self.TestIsEqual(Rook.legalMove(1,1,1,1), False)
+
+if __name__ == '__main__':
+    TestPieceMovement.TestMovement()
