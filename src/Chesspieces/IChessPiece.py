@@ -1,73 +1,51 @@
-from src.TestCase import TestCase
+def pow(x:int):
+    return x * x
 
 class IChessPiece:
-    @staticmethod
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
         pass
-    @staticmethod
-    def legalMove(oldPos:str, newPos:str):
-        pass
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return self.legalMoveCord(ord(oldPos[0].upper()), ord(oldPos[1].upper()), ord(newPos[0].upper()), ord(newPos[1].upper()))
 
 class Rook(IChessPiece):
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
         return bool(oldX - newX ^ oldY - newY)
-    def legalMove(oldPos:str, newPos:str):
-        return bool(oldPos[0] - newPos[0] ^ oldPos[1] - newPos[1])
-
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
+    
 class King(IChessPiece):
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
-        return (oldX - newX) * (oldX - newX) + (oldY - newY) * (oldY - newY) <= 2
-    def legalMove(oldPos, newPos):
-        return (oldPos[0] - newPos[0]) * (oldPos[0] - newPos[0]) + (oldPos[1] - newPos[1]) * (oldPos[1] - newPos[1]) <= 2
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
+        return 0 < pow(oldX - newX) + pow(oldY - newY) <= 2
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
 
 class Bishop(IChessPiece):
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
-        return (oldX - newX) * (oldX - newX) == (oldY - newY) * (oldY - newY)
-    def legalMove(oldPos, newPos):
-        return (oldPos[0] - newPos[0]) * (oldPos[0] - newPos[0]) == (oldPos[1] - newPos[1]) * (oldPos[1] - newPos[1])
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
+        return pow(oldX - newX) == pow(oldY - newY) and pow(oldY - newY) > 0
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
     
 class Knight(IChessPiece):
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
-        return (oldX - newX) * (oldX - newX) + (oldY - newY) * (oldY - newY) == 5
-    def legalMove(oldPos, newPos):
-        return (oldPos[0] - newPos[0]) * (oldPos[0] - newPos[0]) + (oldPos[1] - newPos[1]) * (oldPos[1] - newPos[1]) == 5
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
+        return pow(oldX - newX) + pow(oldY - newY) == 5
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
     
 class Queen(IChessPiece):
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int):
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int):
         if bool(oldX - newX ^ oldY - newY):
             return True
-        return (oldX - newX) * (oldX - newX) == (oldY - newY) * (oldY - newY)
-    def legalMove(oldPos, newPos):
-        if bool(oldPos[0] - newPos[0] ^ oldPos[1] - newPos[1]):
-            return True
-        return (oldPos[0] - newPos[0]) * (oldPos[0] - newPos[0]) == (oldPos[1] - newPos[1]) * (oldPos[1] - newPos[1])
+        return pow(oldX - newX) == pow(oldY - newY) and pow(oldY - newY) > 0
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
+
 class Pawn():
-    def legalMove(oldX:int, oldY:int, newX:int, newY:int, occupiedTile:bool):
+    def legalMoveCord(oldX:int, oldY:int, newX:int, newY:int, occupiedTile:bool):
         if occupiedTile:
             return abs(oldX - newX) == 1 and abs(oldY - newY) == 1
         elif abs(oldX - newX) > 0:
             return False
         else:
             return abs(oldY - newY) == 1
-
-    def legalMove(oldPos:str, newPos:str, occupiedTile:bool):
-        if occupiedTile:
-            return abs(oldPos[0] - newPos[0]) == 1 and abs(oldPos[1] - newPos[1]) == 1
-        elif abs(oldPos[0] - newPos[0]) > 0:
-            return False
-        else:
-            return abs(oldPos[1] - newPos[1]) == 1
-
-    
-
-class TestPieceMovement(TestCase):
-    @staticmethod
-    def TestMovement(self):
-        self.TestIsEqual(Rook.legalMove(1,1,1,2), True)
-        self.TestIsEqual(Rook.legalMove(1,2,1,2), False)
-        self.TestIsEqual(Rook.legalMove(2,1,1,1), True)
-        self.TestIsEqual(Rook.legalMove(1,2,1,2), False)
-        self.TestIsEqual(Rook.legalMove(1,1,1,1), False)
-
-if __name__ == '__main__':
-    TestPieceMovement.TestMovement()
+    def legalMoveStrPos(self, oldPos:str, newPos:str):
+        return super().legalMoveStrPos(self, oldPos, newPos)
