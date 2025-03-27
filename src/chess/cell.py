@@ -21,7 +21,7 @@ class Cell:
 
         # Gameplay Information
         self.screen = screen
-        self.grid = (x, y) # Chessboard
+        self.grid = (x, y) # Chessboard position
         self.piece: 'Piece' = None
 
     def set_styling(self, background_color, border_color, border_width):
