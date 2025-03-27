@@ -8,10 +8,10 @@ if TYPE_CHECKING:
 class Cell:
     def __init__(self, screen: pygame.Surface, pos, w, h, x, y):
         # Positional Information
-        self.pos = pos
-        self.w = w
-        self.h = h
-        self.c = (pos[0] + w//2, pos[1] + h//2)
+        self.pos = pos # Draw Position
+        self.w = w # draw width
+        self.h = h # draw height
+        self.c = (pos[0] + w//2, pos[1] + h//2) # center
 
         #Styling Information
         self.background_color = (0, 0, 0)
@@ -21,7 +21,7 @@ class Cell:
 
         # Gameplay Information
         self.screen = screen
-        self.grid = (x, y)
+        self.grid = (x, y) # Chessboard position
         self.piece: 'Piece' = None
 
     def set_styling(self, background_color, border_color, border_width):
