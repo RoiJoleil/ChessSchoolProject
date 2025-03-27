@@ -103,19 +103,30 @@ class ChessBoard:
         """
         raise NotImplementedError()
 
-    def get_valid_moves(self, cell: Cell) -> List[Cell]:
+    def get_valid_moves(self, curr: Cell) -> List[Cell]:
         """
         Return a list of valid Cells a piece can move to.
         Optionally:
             Implement a highlight on cells to visually help the user.
         """
-        # TODO - Richard
+        # No Shadow Units
+        if curr.piece == None:
+            return None
+        # check every Tile -- surely can be optimised --
+        valid_moves = []
+        for destRow in self.cells:
+            for dest in destRow:
+                if curr.piece.is_valid_move(curr.piece, dest.pos, dest.piece != None):
+                    valid_moves.append(dest)
+        return valid_moves
         raise NotImplementedError()
-    
-    def is_valid_move(self) -> bool:
+    def is_valid_move(self, curr:Cell, dest:Cell) -> bool:
         """Check to make sure an attempted move is valid."""
-        # TODO - Richard
-        raise NotImplementedError()
+        if curr.piece == None:
+            return False
+        return curr.piece.is_valid_move(curr.piece, dest.pos, dest.piece != None)
+        # raise NotImplementedError()
+    
 
     def convert_abs_coords_to_grid_coords(self, pos: tuple) -> tuple:
         """

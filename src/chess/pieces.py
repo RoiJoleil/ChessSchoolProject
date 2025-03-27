@@ -3,7 +3,7 @@ import pygame
 class Piece:
     def __init__(self, screen: pygame.Surface, pos, w, h):
         # Positional Information
-        self.pos = pos
+        self.pos = pos # Tupel (x, y) ?
         self.w = w
         self.h = h
         self.c = (pos[0] + w//2, pos[1] + h//2)
@@ -48,9 +48,15 @@ class Piece:
         styling_info = f"\t(background_color={self.background_color}, border_color={self.border_color}, border_width={self.border_width})"
         return f"{header}\n{positional_info}\n{styling_info}\n"
     
+    def is_valid_move(self):
+        raise NotImplementedError()
+
 class Pawn(Piece):
     def __init__(self, screen, pos, w, h):
         super().__init__(screen, pos, w, h)
+    def is_valid_move(self, dest:tuple, isOccupied:bool):
+        from src.Chesspieces.IChessPiece import Pawn
+        return Pawn.legalMoveCord(self.pos[0], self.pos[1], dest[0], dest[1], isOccupied)
 
 class Rook(Piece):
     def __init__(self, screen, pos, w, h):
