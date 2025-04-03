@@ -90,6 +90,9 @@ class ChessBoard:
         This method updates the necessary positions of the pieces involved.
         This method makes no validation checks if the move is actually valid.
         """
+        if not self.is_valid_move(frm, to):
+            return
+
         if frm.piece:
             frm.piece.update_position(to.c)
         if to.piece:
@@ -103,9 +106,25 @@ class ChessBoard:
         This method will be used for bots if they are implemented
         """
         raise NotImplementedError()
-
-    def is_occupiedBy(self, currGrid:tuple):
-        return -1 if self.cells[currGrid[0]][currGrid[1]].piece == None else self.cells[currGrid[0]][currGrid[1]].piece
+    def signOfNumber(self, number):
+        if number == 0:
+            return 0
+        return 1 if number > 0 else -1
+    def pieceToHex(self, p:Piece) -> int:
+        if p == None:
+            return 0x0
+        if p == Pawn:
+            return 1 + 8 * p.isBlack
+        if p == Rook:
+            return 2 + 8 * p.isBlack
+        if p == Knight:
+            return 3 + 8 * p.isBlack
+        if p == Bishop:
+            return 4 + 8 * p.isBlack
+        if p == Queen:
+            return 5 + 8 * p.isBlack
+        if p == King:
+            return 6 + 8 * p.isBlack
     def get_valid_moves(self, curr: Cell) -> List[Cell]:
         """
         Return a list of valid Cells a piece can move to.
@@ -116,34 +135,36 @@ class ChessBoard:
     def is_valid_move(self, curr:Cell, dest:Cell) -> bool:
         """Check to make sure an attempted move is valid."""
         if curr.piece == Pawn:
+            return True
             if curr.piece.isBlack:
                 if curr.grid[1] == 6 and dest.grid[1] == 4:
-                    return (curr.piece.is_valid_position(curr.grid, (dest.grid[0], 5), self.is_occupiedBy(dest.grid)) and
-                            curr.piece.is_valid_position(curr.grid, (dest.grid[0], 4), self.is_occupiedBy(dest.grid)))
+                    return (curr.piece.is_valid_position(curr.grid, (dest.grid[0], 5), self.pieceToHex(dest.piece)) and
+                            curr.piece.is_valid_position(curr.grid, (dest.grid[0], 4), self.pieceToHex(dest.piece)))
                 else:
-                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.is_occupiedBy(dest.grid))
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
             else:
                 if curr.grid[1] == 1 and dest.grid[1] == 3:
                     return (
-                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 2), self.is_occupiedBy(dest.grid)) and
-                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 3), self.is_occupiedBy(dest.grid))
+                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 2), self.pieceToHex(dest.piece)) and
+                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 3), self.pieceToHex(dest.piece))
                     )
                 else:
-                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.is_occupiedBy(dest.grid))
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
 
-        elif curr.piece == Rook:
-            raise NotImplementedError()
-        elif curr.piece == Knight:
-            raise NotImplementedError()
-        elif curr.piece == Bishop:
-            raise NotImplementedError()
-        elif curr.piece == Queen:
-            raise NotImplementedError()
-        elif curr.piece == King:
-            raise NotImplementedError()
+        elif (curr.piece == Knight) or (curr.piece == King):
+            return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
+        
+        elif curr.piece != None:
+            if not curr.piece.is_valid_position(curr.grid, dest.grid, -1):
+                return False
+            diff = (self.signOfNumber(dest.grid[0] - curr.grid[0]), self.signOfNumber(dest.grid[1] - curr.grid[1]))
+            for i in range(1,8):
+                if (curr.grid[0] + diff[0] * i == dest.grid[0]) and (curr.grid[1] + diff[1] * i == dest.grid[1]) :
+                    return True
+                if self.cells[curr.grid[0] + diff[0] * i][curr.grid[1] + diff[1] * i] != None:
+                    return False
         else:
             return False
-    
 
     def convert_abs_coords_to_grid_coords(self, pos: tuple) -> tuple:
         """

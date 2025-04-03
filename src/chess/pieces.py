@@ -50,13 +50,13 @@ class Piece:
         team_info = "Schwarz" if self.isBlack else "Weiß"
         return f"{header}\n{positional_info}\n{styling_info}\n"
     
-    def is_valid_position(self, curr:tuple, dest:tuple, occupiedBy:int):
+    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         """
         checks if the destination is a valid position from the current position
         Args:
             curr(tuple): current Position of the Piece
             dest(tuple): destination position of the Piece
-            occupiedBy(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
+            pieceInHex(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
         """
         raise NotImplementedError()
 
@@ -64,50 +64,62 @@ class Pawn(Piece):
     def __init__(self, screen, pos, w, h,isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr:tuple, dest:tuple, occupiedBy:int) -> bool:
+    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int) -> bool:
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
         # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
         if dest[1] - curr[1] != 1 - 2 * self.isBlack:
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
-                return occupiedBy < 0
+            return pieceInHex % 8 == 0 
         # if the movement is diagonal the Tile has to be occupied by the other team
         elif abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 2:
-            return self.isBlack != occupiedBy if occupiedBy >= 0 else False
+            return self.isBlack != (pieceInHex // 8) if pieceInHex > 0 else False
         return False
 
 class Rook(Piece):
     def __init__(self, screen, pos, w, h, isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+    def is_valid_position(self, curr, dest, pieceInHex) -> bool:
+        if (pieceInHex // 8 == self.isBlack):
+            return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
 class Knight(Piece):
     def __init__(self, screen, pos, w, h, isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+    def is_valid_position(self, curr, dest, pieceInHex) -> bool:
+        if (pieceInHex // 8 == self.isBlack):
+            return False
         return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
 
 class Bishop(Piece):
     def __init__(self, screen, pos, w, h, isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+    def is_valid_position(self, curr, dest, pieceInHex) -> bool:
+        if (pieceInHex // 8 == self.isBlack):
+            return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
 
 class Queen(Piece):
     def __init__(self, screen, pos, w, h, isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
-        return bool(abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) ^ (bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1]))
+    def is_valid_position(self, curr, dest, pieceInHex) -> bool:
+        if (pieceInHex // 8 == self.isBlack):
+            return False
+        if abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 0:
+            return False
+        return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
 class King(Piece):
     def __init__(self, screen, pos, w, h, isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+    def is_valid_position(self, curr, dest, pieceInHex) -> bool:
+        if (pieceInHex // 8 == self.isBlack):
+            return False
         return 0 < pow(curr[0] - dest[0], 2) + pow(curr[1] - dest[1], 2) <= 2
