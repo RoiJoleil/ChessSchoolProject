@@ -1,13 +1,14 @@
 import pygame
 
 class Piece:
-    def __init__(self, screen: pygame.Surface, pos, w, h):
+    def __init__(self, screen: pygame.Surface, pos, w, h, isBlack:bool):
         # Positional Information
-        self.pos = pos # Tupel (x, y) ?
-        self.w = w
-        self.h = h
-        self.c = (pos[0] + w//2, pos[1] + h//2)
-
+        self.pos = pos # position on screen
+        self.w = w # width of piece
+        self.h = h # height of piece
+        self.c = (pos[0] + w//2, pos[1] + h//2) # center of Piece 
+        self.isBlack = isBlack # which team the Piece is
+        
         # Styling Information
         self.background_color = (0, 0, 0)
         self.border_color = (0, 0, 0)
@@ -46,34 +47,67 @@ class Piece:
         header = f"[class '{self.__class__.__name__}' Information]"
         positional_info = f"\t(pos={self.pos}, w={self.w}, h={self.h}, c={self.c})"
         styling_info = f"\t(background_color={self.background_color}, border_color={self.border_color}, border_width={self.border_width})"
+        team_info = "Schwarz" if self.isBlack else "Weiß"
         return f"{header}\n{positional_info}\n{styling_info}\n"
     
-    def is_valid_move(self):
+    def is_valid_position(self, curr:tuple, dest:tuple, occupiedBy:int):
+        """
+        checks if the destination is a valid position from the current position
+        Args:
+            curr(tuple): current Position of the Piece
+            dest(tuple): destination position of the Piece
+            occupiedBy(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
+        """
         raise NotImplementedError()
 
 class Pawn(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
-    def is_valid_move(self, dest:tuple, isOccupied:bool):
-        from src.Chesspieces.IChessPiece import Pawn
-        return Pawn.legalMoveCord(self.pos[0], self.pos[1], dest[0], dest[1], isOccupied)
+    def __init__(self, screen, pos, w, h,isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr:tuple, dest:tuple, occupiedBy:int) -> bool:
+        # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
+        # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
+        if dest[1] - curr[1] != 1 - 2 * self.isBlack:
+            return False
+        # if the movement is vertical the Cell must be empty
+        if curr[0] == dest[0]:
+                return occupiedBy < 0
+        # if the movement is diagonal the Tile has to be occupied by the other team
+        elif abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 2:
+            return self.isBlack != occupiedBy if occupiedBy >= 0 else False
+        return False
 
 class Rook(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
+    def __init__(self, screen, pos, w, h, isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+        return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
 class Knight(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
+    def __init__(self, screen, pos, w, h, isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+        return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
 
 class Bishop(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
+    def __init__(self, screen, pos, w, h, isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+        return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
 
 class Queen(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
+    def __init__(self, screen, pos, w, h, isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+        return bool(abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) ^ (bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1]))
 
 class King(Piece):
-    def __init__(self, screen, pos, w, h):
-        super().__init__(screen, pos, w, h)
+    def __init__(self, screen, pos, w, h, isBlack):
+        super().__init__(screen, pos, w, h, isBlack)
+
+    def is_valid_position(self, curr, dest, occupiedBy) -> bool:
+        return 0 < pow(curr[0] - dest[0], 2) + pow(curr[1] - dest[1], 2) <= 2

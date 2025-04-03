@@ -35,6 +35,7 @@ class Cell:
     def draw(self):
         pygame.draw.rect(self.screen, self.background_color, self.rect) # Draw Background
         pygame.draw.rect(self.screen, self.border_color, self.rect, self.border_width) # Draw Border
+        self.piece.draw() if self.piece != None else None
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"

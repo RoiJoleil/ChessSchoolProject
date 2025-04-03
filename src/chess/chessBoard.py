@@ -43,27 +43,28 @@ class ChessBoard:
 
                 # Create Pieces
                 piece = start_table[y][x]
-                piece = piece.split(';')
+                pieceType = piece % 0x8
+                pieceTeam = piece // 8
                 
                 pos = (cell.c[0] - PS.PIECE_SIZE // 2, cell.c[1] - PS.PIECE_SIZE // 2)
-                team_color = PS.PIECE_BLACK if piece[1] == 'B' else PS.PIECE_WHITE
-                if piece[0] == 'P':
-                    cell.piece = Pawn(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                team_color = PS.PIECE_BLACK if pieceTeam else PS.PIECE_WHITE
+                if pieceType == 0x1:
+                    cell.piece = Pawn(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.PAWN, team_color, PS.PIECE_BORDER_WIDTH)
-                elif piece[0] == 'R':
-                    cell.piece = Rook(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                elif pieceType == 0x2:
+                    cell.piece = Rook(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.ROOK, team_color, PS.PIECE_BORDER_WIDTH)
-                elif piece[0] == 'N':
-                    cell.piece = Knight(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                elif pieceType == 0x3:
+                    cell.piece = Knight(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.KNIGHT, team_color, PS.PIECE_BORDER_WIDTH)
-                elif piece[0] == 'B':
-                    cell.piece = Bishop(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                elif pieceType == 0x4:
+                    cell.piece = Bishop(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.BISHOP, team_color, PS.PIECE_BORDER_WIDTH)
-                elif piece[0] == 'Q':
-                    cell.piece = Queen(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                elif pieceType == 0x5:
+                    cell.piece = Queen(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.QUEEN, team_color, PS.PIECE_BORDER_WIDTH)
-                elif piece[0] == 'K':
-                    cell.piece = King(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE)
+                elif pieceType == 0x6:
+                    cell.piece = King(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
                     cell.piece.set_styling(PS.KING, team_color, PS.PIECE_BORDER_WIDTH)
                 if cell.piece:
                     cell.piece.rect = pygame.rect.Rect(pos[0], pos[1], PS.PIECE_SIZE, PS.PIECE_SIZE)
@@ -103,29 +104,45 @@ class ChessBoard:
         """
         raise NotImplementedError()
 
+    def is_occupiedBy(self, currGrid:tuple):
+        return -1 if self.cells[currGrid[0]][currGrid[1]].piece == None else self.cells[currGrid[0]][currGrid[1]].piece
     def get_valid_moves(self, curr: Cell) -> List[Cell]:
         """
         Return a list of valid Cells a piece can move to.
         Optionally:
             Implement a highlight on cells to visually help the user.
         """
-        # No Shadow Units
-        if curr.piece == None:
-            return None
-        # check every Tile -- surely can be optimised --
-        valid_moves = []
-        for destRow in self.cells:
-            for dest in destRow:
-                if curr.piece.is_valid_move(curr.piece, dest.pos, dest.piece != None):
-                    valid_moves.append(dest)
-        return valid_moves
         raise NotImplementedError()
     def is_valid_move(self, curr:Cell, dest:Cell) -> bool:
         """Check to make sure an attempted move is valid."""
-        if curr.piece == None:
+        if curr.piece == Pawn:
+            if curr.piece.isBlack:
+                if curr.grid[1] == 6 and dest.grid[1] == 4:
+                    return (curr.piece.is_valid_position(curr.grid, (dest.grid[0], 5), self.is_occupiedBy(dest.grid)) and
+                            curr.piece.is_valid_position(curr.grid, (dest.grid[0], 4), self.is_occupiedBy(dest.grid)))
+                else:
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.is_occupiedBy(dest.grid))
+            else:
+                if curr.grid[1] == 1 and dest.grid[1] == 3:
+                    return (
+                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 2), self.is_occupiedBy(dest.grid)) and
+                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 3), self.is_occupiedBy(dest.grid))
+                    )
+                else:
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.is_occupiedBy(dest.grid))
+
+        elif curr.piece == Rook:
+            raise NotImplementedError()
+        elif curr.piece == Knight:
+            raise NotImplementedError()
+        elif curr.piece == Bishop:
+            raise NotImplementedError()
+        elif curr.piece == Queen:
+            raise NotImplementedError()
+        elif curr.piece == King:
+            raise NotImplementedError()
+        else:
             return False
-        return curr.piece.is_valid_move(curr.piece, dest.pos, dest.piece != None)
-        # raise NotImplementedError()
     
 
     def convert_abs_coords_to_grid_coords(self, pos: tuple) -> tuple:
