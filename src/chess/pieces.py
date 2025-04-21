@@ -1,13 +1,13 @@
 import pygame
 
 class Piece:
-    def __init__(self, screen: pygame.Surface, pos, w, h, isBlack:bool):
+    def __init__(self, screen: pygame.Surface, pos, w, h, identity):
         # Positional Information
         self.pos = pos # position on screen
         self.w = w # width of piece
         self.h = h # height of piece
         self.c = (pos[0] + w//2, pos[1] + h//2) # center of Piece 
-        self.isBlack = isBlack # which team the Piece is
+        self.identity = identity # What piece it is
         
         # Styling Information
         self.background_color = (0, 0, 0)
@@ -35,6 +35,9 @@ class Piece:
         self.border_color = border_color
         self.border_width = border_width
 
+    def isBlack(self):
+        return self.identity // 8
+
     def draw(self):
         """
         TODO
@@ -47,7 +50,7 @@ class Piece:
         header = f"[class '{self.__class__.__name__}' Information]"
         positional_info = f"\t(pos={self.pos}, w={self.w}, h={self.h}, c={self.c})"
         styling_info = f"\t(background_color={self.background_color}, border_color={self.border_color}, border_width={self.border_width})"
-        team_info = "Schwarz" if self.isBlack else "Weiß"
+        team_info = "Schwarz" if self.isBlack() else "Weiß"
         return f"{header}\n{positional_info}\n{styling_info}\n"
     
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
@@ -64,17 +67,17 @@ class Pawn(Piece):
     def __init__(self, screen, pos, w, h,isBlack):
         super().__init__(screen, pos, w, h, isBlack)
 
-    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int) -> bool:
+    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
         # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
-        if dest[1] - curr[1] != 1 - 2 * self.isBlack:
+        if dest[1] - curr[1] != 1 - 2 * self.isBlack():
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
-            return pieceInHex % 8 == 0 
+            return pieceInHex % 8 == 0
         # if the movement is diagonal the Tile has to be occupied by the other team
         elif abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 2:
-            return self.isBlack != (pieceInHex // 8) if pieceInHex > 0 else False
+            return pieceInHex % 8 != 0 and self.isBlack() != pieceInHex // 8
         return False
 
 class Rook(Piece):
@@ -82,7 +85,7 @@ class Rook(Piece):
         super().__init__(screen, pos, w, h, isBlack)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
-        if (pieceInHex // 8 == self.isBlack):
+        if (pieceInHex // 8 == self.isBlack()):
             return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
@@ -91,7 +94,7 @@ class Knight(Piece):
         super().__init__(screen, pos, w, h, isBlack)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
-        if (pieceInHex // 8 == self.isBlack):
+        if (pieceInHex // 8 == self.isBlack()):
             return False
         return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
 
@@ -100,7 +103,7 @@ class Bishop(Piece):
         super().__init__(screen, pos, w, h, isBlack)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
-        if (pieceInHex // 8 == self.isBlack):
+        if (pieceInHex // 8 == self.isBlack()):
             return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
 
@@ -109,7 +112,7 @@ class Queen(Piece):
         super().__init__(screen, pos, w, h, isBlack)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
-        if (pieceInHex // 8 == self.isBlack):
+        if (pieceInHex // 8 == self.isBlack()):
             return False
         if abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 0:
             return False
@@ -120,6 +123,6 @@ class King(Piece):
         super().__init__(screen, pos, w, h, isBlack)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
-        if (pieceInHex // 8 == self.isBlack):
+        if (pieceInHex // 8 == self.isBlack()):
             return False
         return 0 < pow(curr[0] - dest[0], 2) + pow(curr[1] - dest[1], 2) <= 2

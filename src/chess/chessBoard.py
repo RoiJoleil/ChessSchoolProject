@@ -15,6 +15,7 @@ class ChessBoard:
 
         self.selected_cell = None
         self.players_turn = None
+        self.current_turn = False
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
@@ -49,22 +50,22 @@ class ChessBoard:
                 pos = (cell.c[0] - PS.PIECE_SIZE // 2, cell.c[1] - PS.PIECE_SIZE // 2)
                 team_color = PS.PIECE_BLACK if pieceTeam else PS.PIECE_WHITE
                 if pieceType == 0x1:
-                    cell.piece = Pawn(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = Pawn(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.PAWN, team_color, PS.PIECE_BORDER_WIDTH)
                 elif pieceType == 0x2:
-                    cell.piece = Rook(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = Rook(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.ROOK, team_color, PS.PIECE_BORDER_WIDTH)
                 elif pieceType == 0x3:
-                    cell.piece = Knight(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = Knight(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.KNIGHT, team_color, PS.PIECE_BORDER_WIDTH)
                 elif pieceType == 0x4:
-                    cell.piece = Bishop(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = Bishop(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.BISHOP, team_color, PS.PIECE_BORDER_WIDTH)
                 elif pieceType == 0x5:
-                    cell.piece = Queen(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = Queen(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.QUEEN, team_color, PS.PIECE_BORDER_WIDTH)
                 elif pieceType == 0x6:
-                    cell.piece = King(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, pieceTeam)
+                    cell.piece = King(self.screen, pos, PS.PIECE_SIZE, PS.PIECE_SIZE, piece)
                     cell.piece.set_styling(PS.KING, team_color, PS.PIECE_BORDER_WIDTH)
                 if cell.piece:
                     cell.piece.rect = pygame.rect.Rect(pos[0], pos[1], PS.PIECE_SIZE, PS.PIECE_SIZE)
@@ -90,6 +91,10 @@ class ChessBoard:
         This method updates the necessary positions of the pieces involved.
         This method makes no validation checks if the move is actually valid.
         """
+        if frm.piece == None:
+            return
+        if frm.piece.identity // 8 == self.current_turn:
+            return
         if not self.is_valid_move(frm, to):
             return
 
@@ -99,6 +104,7 @@ class ChessBoard:
             to.piece.update_position(frm.c)
         to.piece = frm.piece
         frm.piece = None
+        self.current_turn = not self.current_turn
 
     def get_all_valid_moves(self):
         """
@@ -110,21 +116,6 @@ class ChessBoard:
         if number == 0:
             return 0
         return 1 if number > 0 else -1
-    def pieceToHex(self, p:Piece) -> int:
-        if p == None:
-            return 0x0
-        if p == Pawn:
-            return 1 + 8 * p.isBlack
-        if p == Rook:
-            return 2 + 8 * p.isBlack
-        if p == Knight:
-            return 3 + 8 * p.isBlack
-        if p == Bishop:
-            return 4 + 8 * p.isBlack
-        if p == Queen:
-            return 5 + 8 * p.isBlack
-        if p == King:
-            return 6 + 8 * p.isBlack
     def get_valid_moves(self, curr: Cell) -> List[Cell]:
         """
         Return a list of valid Cells a piece can move to.
@@ -134,34 +125,41 @@ class ChessBoard:
         raise NotImplementedError()
     def is_valid_move(self, curr:Cell, dest:Cell) -> bool:
         """Check to make sure an attempted move is valid."""
-        if curr.piece == Pawn:
-            return True
-            if curr.piece.isBlack:
+        if isinstance(curr.piece, Pawn):
+            # En Passante not implemented
+            if curr.piece.identity // 8:
                 if curr.grid[1] == 6 and dest.grid[1] == 4:
-                    return (curr.piece.is_valid_position(curr.grid, (dest.grid[0], 5), self.pieceToHex(dest.piece)) and
-                            curr.piece.is_valid_position(curr.grid, (dest.grid[0], 4), self.pieceToHex(dest.piece)))
-                else:
-                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
-            else:
-                if curr.grid[1] == 1 and dest.grid[1] == 3:
+                    if curr.grid[0] != dest.grid[0]:
+                        return False
                     return (
-                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 2), self.pieceToHex(dest.piece)) and
-                        curr.piece.is_valid_position(curr.grid, (dest.grid[0], 3), self.pieceToHex(dest.piece))
+                        self.get_cell(curr.grid[0], 5).piece == None and
+                        self.get_cell(curr.grid[0], 4).piece == None
                     )
                 else:
-                    return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
+            else:
+                if curr.grid[1] == 1 and dest.grid[1] == 3:
+                    if curr.grid[0] != dest.grid[0]:
+                        return False
+                    return (
+                        self.get_cell(curr.grid[0], 2).piece == None and
+                        self.get_cell(curr.grid[0], 3).piece == None
+                    )
+                else:
+                    return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
 
-        elif (curr.piece == Knight) or (curr.piece == King):
-            return curr.piece.is_valid_position(curr.grid, dest.grid, self.pieceToHex(dest.piece))
+        elif isinstance(curr.piece,(King, Knight)):
+            return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
         
         elif curr.piece != None:
-            if not curr.piece.is_valid_position(curr.grid, dest.grid, -1):
+            if not curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0):
                 return False
             diff = (self.signOfNumber(dest.grid[0] - curr.grid[0]), self.signOfNumber(dest.grid[1] - curr.grid[1]))
+            print(f"diff{diff}")
             for i in range(1,8):
                 if (curr.grid[0] + diff[0] * i == dest.grid[0]) and (curr.grid[1] + diff[1] * i == dest.grid[1]) :
                     return True
-                if self.cells[curr.grid[0] + diff[0] * i][curr.grid[1] + diff[1] * i] != None:
+                if self.get_cell(curr.grid[0] + diff[0] * i, curr.grid[1] + diff[1] * i).piece != None:
                     return False
         else:
             return False

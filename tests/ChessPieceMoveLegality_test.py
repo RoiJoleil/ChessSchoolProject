@@ -6,6 +6,12 @@ class ChessPieceMoveLegality_test(unittest.TestCase):
 
     ChessBoardOfChessPieceMoveLegality_test = ChessBoard(None)
 
+#
+#   Alle unitests sind unvollständig
+#
+
+
+
     def test_rook(self):
         rook = Rook(None, (10, 10), 10, 10, True)
         # legal Move
