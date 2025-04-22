@@ -1,57 +1,75 @@
 import pygame
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.chess import cell
+
+PIECE_BLACK = (0, 0, 0)
+PIECE_WHITE = (255, 255, 255)
+PIECE_BORDER_WIDTH = 2
+PIECE_SIZE = 35
+PAWN = (0, 215, 215)
+ROOK = (215, 0, 0)
+BISHOP = (0, 215, 0)
+KNIGHT = (145, 25, 100)
+QUEEN = (255, 0, 255)
+KING = (255, 255, 0)
 
 class Piece:
-    def __init__(self, screen: pygame.Surface, pos, w, h, identity):
+    def __init__(self, cell: "cell.Cell", team: bool):
         # Positional Information
-        self.pos = pos # position on screen
-        self.w = w # width of piece
-        self.h = h # height of piece
-        self.c = (pos[0] + w//2, pos[1] + h//2) # center of Piece 
-        self.identity = identity # What piece it is
-        
-        # Styling Information
-        self.background_color = (0, 0, 0)
-        self.border_color = (0, 0, 0)
-        self.border_width = 1
+        self.cell = cell
+        self.team = team # True = White, False = Black
 
         # Gameplay Information
-        self.screen = screen
-        self.rect: pygame.rect.Rect = None
+        self.rect = pygame.rect.Rect(self.cell.rect.x+20, self.cell.rect.y+20, PIECE_SIZE, PIECE_SIZE)
+        self._set_styling()
 
-    def update_position(self, cell_c: tuple):
-        """
-        Updates the Piece information when it is being moved.
+    def _set_styling(self):
+        if self.team:
+            self.border_color = PIECE_WHITE
+        else:
+            self.border_color = PIECE_BLACK
         
-        Args:
-            cell_c (tuple): The Center Position of the new cell its on.
-        """
-        self.pos = (cell_c[0] - self.w // 2, cell_c[1] - self.h // 2)
-        self.c = cell_c
-        self.rect.x = self.pos[0]
-        self.rect.y = self.pos[1]
+        if isinstance(self, Pawn):
+            self.background_color = PAWN
+        elif isinstance(self, Rook):
+            self.background_color = ROOK
+        elif isinstance(self, Knight):
+            self.background_color = KNIGHT
+        elif isinstance(self, Bishop):
+            self.background_color = BISHOP
+        elif isinstance(self, Queen):
+            self.background_color = QUEEN
+        elif isinstance(self, King):
+            self.background_color = KING
 
-    def set_styling(self, background_color, border_color, border_width):
-        self.background_color = background_color
-        self.border_color = border_color
-        self.border_width = border_width
+        self.border_width = PIECE_BORDER_WIDTH
+
+    def move(self, x: int, y: int):
+        self.rect.x += x
+        self.rect.y += y
+
+    def set_position(self, x: int, y: int):
+        self.rect.x = x
+        self.rect.y = y
 
     def isBlack(self):
-        return self.identity // 8
+        return self.team // 8
 
-    def draw(self):
+    def draw(self, surface: pygame.Surface):
         """
         TODO
         This is temporary until we replace them with actual .png files of the pieces
         """
-        pygame.draw.rect(self.screen, self.background_color, self.rect) # Draw Background
-        pygame.draw.rect(self.screen, self.border_color, self.rect, self.border_width) # Draw Border
+        pygame.draw.rect(surface, self.background_color, self.rect) # Draw Background
+        pygame.draw.rect(surface, self.border_color, self.rect, self.border_width) # Draw Border
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
-        positional_info = f"\t(pos={self.pos}, w={self.w}, h={self.h}, c={self.c})"
         styling_info = f"\t(background_color={self.background_color}, border_color={self.border_color}, border_width={self.border_width})"
         team_info = "Schwarz" if self.isBlack() else "Weiß"
-        return f"{header}\n{positional_info}\n{styling_info}\n"
+        return f"{header}\n{styling_info}\n"
     
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         """
@@ -64,8 +82,9 @@ class Piece:
         raise NotImplementedError()
 
 class Pawn(Piece):
-    def __init__(self, screen, pos, w, h,isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
+        self.identity = 1 + 8 * self.team
 
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
@@ -81,8 +100,8 @@ class Pawn(Piece):
         return False
 
 class Rook(Piece):
-    def __init__(self, screen, pos, w, h, isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -90,8 +109,8 @@ class Rook(Piece):
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
 class Knight(Piece):
-    def __init__(self, screen, pos, w, h, isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -99,8 +118,8 @@ class Knight(Piece):
         return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
 
 class Bishop(Piece):
-    def __init__(self, screen, pos, w, h, isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -108,8 +127,8 @@ class Bishop(Piece):
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
 
 class Queen(Piece):
-    def __init__(self, screen, pos, w, h, isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -119,10 +138,18 @@ class Queen(Piece):
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
 class King(Piece):
-    def __init__(self, screen, pos, w, h, isBlack):
-        super().__init__(screen, pos, w, h, isBlack)
+    def __init__(self, cell: "cell.Cell", team: bool):
+        super().__init__(cell, team)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
             return False
         return 0 < pow(curr[0] - dest[0], 2) + pow(curr[1] - dest[1], 2) <= 2
+
+def get_pawn_row() -> List[Piece]:
+    """Return a list of pawns."""
+    return [Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn]
+
+def get_piece_row() -> List[Piece]:
+    """Return a list of pieces in the order they spawn in."""
+    return [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]

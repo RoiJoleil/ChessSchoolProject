@@ -1,7 +1,6 @@
 import unittest
 from src.chess.pieces import Pawn, Rook, Knight, Bishop, Queen, King
 from src.chess.chessBoard import ChessBoard
-from src.chess.cell import Cell 
 class ChessPieceMoveLegality_test(unittest.TestCase):
 
     ChessBoardOfChessPieceMoveLegality_test = ChessBoard(None)
