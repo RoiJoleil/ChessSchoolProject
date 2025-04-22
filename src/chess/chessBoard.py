@@ -15,7 +15,7 @@ class ChessBoard:
 
         self.selected_cell = None
         self.players_turn = None
-        self.current_turn = False
+        self.current_turn = True
         self.en_passante = None # if en passante is possible it will have a tuple of the coordinate of possible on passante
 
     def _initialise_cells(self):
@@ -61,10 +61,11 @@ class ChessBoard:
         """
         if frm.piece == None:
             return
-        if frm.piece.team // 8 == self.current_turn:
+        if frm.piece.team == self.current_turn:
             return
         if not self.is_valid_move(frm, to):
             return
+        print(f"from: {frm}\tto{to}")
         cell.move_piece(frm=frm, to=to)
         self.current_turn = not self.current_turn
 
@@ -92,7 +93,7 @@ class ChessBoard:
         """Check to make sure an attempted move is valid."""
         if isinstance(curr.piece, Pawn):
             # En Passante not implemented
-            if curr.piece.team // 8:
+            if curr.piece.team:
                 if curr.grid_pos[1] == 6 and dest.grid_pos[1] == 4:
                     if curr.grid_pos[0] != dest.grid_pos[0]:
                         return False
@@ -101,10 +102,9 @@ class ChessBoard:
                         self.get_cell(curr.grid_pos[0], 5).piece == None and
                         self.get_cell(curr.grid_pos[0], 4).piece == None
                         ):
-                        self.en_passante = (curr.grid_pos[0], 5)
                         return True
                 else:
-                    return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece != None else 0)
+                    return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
             else:
                 if curr.grid_pos[1] == 1 and dest.grid_pos[1] == 3:
                     if curr.grid_pos[0] != dest.grid_pos[0]:
@@ -112,19 +112,15 @@ class ChessBoard:
                     if (
                         self.get_cell(curr.grid_pos[0], 2).piece == None and
                         self.get_cell(curr.grid_pos[0], 3).piece == None):
-                        self.en_passante = (curr.grid_pos[0], 2)
+                        return True
                 else:
-                    if self.en_passante:
-                        if dest.grid_pos[0] == self.en_passante[0] and dest.grid_pos[0] == self.en_passante[0]:
-                            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, self.get_cell(curr) if dest.piece != None else 0)
-                    else:
-                        return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece != None else 0)
+                    return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
 
         elif isinstance(curr.piece,(King, Knight)):
-            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece != None else 0)
+            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
         
         elif curr.piece != None:
-            if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece != None else 0):
+            if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0):
                 return False
             diff = (self.signOfNumber(dest.grid_pos[0] - curr.grid_pos[0]), self.signOfNumber(dest.grid_pos[1] - curr.grid_pos[1]))
             for i in range(1,8):

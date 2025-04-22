@@ -64,5 +64,5 @@ def draw(surface: pygame.Surface):
 def move_piece(frm: Cell, to: Cell):
     """'frm' moves 'to'"""
     to.piece = frm.piece
-    to.piece.set_position(to.piece.rect.x, to.piece.rect.y)
+    to.piece.set_position(to.piece.rect.x, to.rect.y)
     frm.piece = None

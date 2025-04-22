@@ -20,6 +20,7 @@ class Piece:
         # Positional Information
         self.cell = cell
         self.team = team # True = White, False = Black
+        self.identity = 0
 
         # Gameplay Information
         self.rect = pygame.rect.Rect(self.cell.rect.x+20, self.cell.rect.y+20, PIECE_SIZE, PIECE_SIZE)
@@ -55,7 +56,7 @@ class Piece:
         self.rect.y = y
 
     def isBlack(self):
-        return self.team // 8
+        return self.team
 
     def draw(self, surface: pygame.Surface):
         """
@@ -102,6 +103,7 @@ class Pawn(Piece):
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
+        self.identity = 2 + 8 * self.team
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -111,6 +113,7 @@ class Rook(Piece):
 class Knight(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
+        self.identity = 3 + 8 * self.team
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -120,6 +123,7 @@ class Knight(Piece):
 class Bishop(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
+        self.identity = 4 + 8 * self.team
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -129,6 +133,7 @@ class Bishop(Piece):
 class Queen(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
+        self.identity = 5 + 8 * self.team
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -140,6 +145,7 @@ class Queen(Piece):
 class King(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
+        self.identity = 6 + 8 * self.team
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
