@@ -16,6 +16,7 @@ class ChessBoard:
         self.selected_cell = None
         self.players_turn = None
         self.current_turn = False
+        self.en_passante = None # if en passante is possible it will have a tuple of the coordinate of possible on passante
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
@@ -131,22 +132,29 @@ class ChessBoard:
                 if curr.grid[1] == 6 and dest.grid[1] == 4:
                     if curr.grid[0] != dest.grid[0]:
                         return False
-                    return (
+                    
+                    if (
                         self.get_cell(curr.grid[0], 5).piece == None and
                         self.get_cell(curr.grid[0], 4).piece == None
-                    )
+                        ):
+                        self.en_passante = (curr.grid[0], 5)
+                        return True
                 else:
                     return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
             else:
                 if curr.grid[1] == 1 and dest.grid[1] == 3:
                     if curr.grid[0] != dest.grid[0]:
                         return False
-                    return (
+                    if (
                         self.get_cell(curr.grid[0], 2).piece == None and
-                        self.get_cell(curr.grid[0], 3).piece == None
-                    )
+                        self.get_cell(curr.grid[0], 3).piece == None):
+                        self.en_passante = (curr.grid[0], 2)
                 else:
-                    return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
+                    if self.en_passante:
+                        if dest.grid[0] == self.en_passante[0] and dest.grid[0] == self.en_passante[0]:
+                            return curr.piece.is_valid_position(curr.grid, dest.grid, self.get_cell(curr) if dest.piece != None else 0)
+                    else:
+                        return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
 
         elif isinstance(curr.piece,(King, Knight)):
             return curr.piece.is_valid_position(curr.grid, dest.grid, dest.piece.identity if dest.piece != None else 0)
