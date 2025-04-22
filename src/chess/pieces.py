@@ -1,4 +1,5 @@
 import pygame
+from src import pngHandler
 from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -7,7 +8,7 @@ if TYPE_CHECKING:
 PIECE_BLACK = (0, 0, 0)
 PIECE_WHITE = (255, 255, 255)
 PIECE_BORDER_WIDTH = 2
-PIECE_SIZE = 35
+PIECE_SIZE = 75
 PAWN = (0, 215, 215)
 ROOK = (215, 0, 0)
 BISHOP = (0, 215, 0)
@@ -21,32 +22,15 @@ class Piece:
         self.cell = cell
         self.team = team # True = White, False = Black
         self.identity = 0
+        self.piece = None
 
         # Gameplay Information
-        self.rect = pygame.rect.Rect(self.cell.rect.x+20, self.cell.rect.y+20, PIECE_SIZE, PIECE_SIZE)
+        self.rect = pygame.rect.Rect(self.cell.rect.x, self.cell.rect.y, PIECE_SIZE, PIECE_SIZE)
         self._set_styling()
 
     def _set_styling(self):
-        if self.team:
-            self.border_color = PIECE_WHITE
-        else:
-            self.border_color = PIECE_BLACK
-        
-        if isinstance(self, Pawn):
-            self.background_color = PAWN
-        elif isinstance(self, Rook):
-            self.background_color = ROOK
-        elif isinstance(self, Knight):
-            self.background_color = KNIGHT
-        elif isinstance(self, Bishop):
-            self.background_color = BISHOP
-        elif isinstance(self, Queen):
-            self.background_color = QUEEN
-        elif isinstance(self, King):
-            self.background_color = KING
-
-        self.border_width = PIECE_BORDER_WIDTH
-
+        raise NotImplementedError()
+    
     def move(self, x: int, y: int):
         self.rect.x += x
         self.rect.y += y
@@ -59,18 +43,13 @@ class Piece:
         return self.team
 
     def draw(self, surface: pygame.Surface):
-        """
-        TODO
-        This is temporary until we replace them with actual .png files of the pieces
-        """
-        pygame.draw.rect(surface, self.background_color, self.rect) # Draw Background
-        pygame.draw.rect(surface, self.border_color, self.rect, self.border_width) # Draw Border
+        surface.blit(self.piece, (self.rect.x, self.rect.y))
+        rect = pygame.rect.Rect(self.rect.x, self.rect.y, PIECE_SIZE, PIECE_SIZE)
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
-        styling_info = f"\t(background_color={self.background_color}, border_color={self.border_color}, border_width={self.border_width})"
         team_info = "Schwarz" if self.isBlack() else "Weiß"
-        return f"{header}\n{styling_info}\n"
+        return f"{header}\n{team_info}\n"
     
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         """
@@ -86,6 +65,11 @@ class Pawn(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 1 + 8 * self.team
+
+    def _set_styling(self):
+        name = "white-pawn" if self.team else "black-pawn"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
@@ -105,6 +89,11 @@ class Rook(Piece):
         super().__init__(cell, team)
         self.identity = 2 + 8 * self.team
 
+    def _set_styling(self):
+        name = "white-rook" if self.team else "black-rook"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
+
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
             return False
@@ -114,6 +103,11 @@ class Knight(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 3 + 8 * self.team
+
+    def _set_styling(self):
+        name = "white-knight" if self.team else "black-knight"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -125,6 +119,11 @@ class Bishop(Piece):
         super().__init__(cell, team)
         self.identity = 4 + 8 * self.team
 
+    def _set_styling(self):
+        name = "white-bishop" if self.team else "black-bishop"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
+
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
             return False
@@ -134,6 +133,11 @@ class Queen(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 5 + 8 * self.team
+
+    def _set_styling(self):
+        name = "white-queen" if self.team else "black-queen"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):
@@ -146,6 +150,11 @@ class King(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 6 + 8 * self.team
+
+    def _set_styling(self):
+        name = "white-king" if self.team else "black-king"
+        self.piece = pngHandler.get_pygame_image(name)
+        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.isBlack()):

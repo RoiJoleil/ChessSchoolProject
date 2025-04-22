@@ -15,7 +15,7 @@ class ChessBoard:
 
         self.selected_cell = None
         self.players_turn = None
-        self.current_turn = True
+        self.current_turn = False
         self.en_passante = None # if en passante is possible it will have a tuple of the coordinate of possible on passante
 
     def _initialise_cells(self):
@@ -24,7 +24,7 @@ class ChessBoard:
         for x in range(8):
             for y in range(8):
                 pos = (x * cell.CELL_SIZE, y * cell.CELL_SIZE)
-                cell.create_cell(pos, x, 7-y)
+                cell.create_cell(pos, x, y)
         
         piece_row = pieces.get_piece_row()
         pawn_row = pieces.get_pawn_row()
@@ -33,10 +33,10 @@ class ChessBoard:
             cell_black_pawn = cell.cells[(x, 6)]
             cell_white_pawn = cell.cells[(x, 1)]
             cell_white_piece = cell.cells[(x, 0)]
-            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
-            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
-            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
-            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
+            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=True))
+            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=True))
+            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=False))
+            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=False))
 
     def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
         """
@@ -90,6 +90,7 @@ class ChessBoard:
         raise NotImplementedError()
     
     def is_valid_move(self, curr:cell.Cell, dest:cell.Cell) -> bool:
+        return True
         """Check to make sure an attempted move is valid."""
         if isinstance(curr.piece, Pawn):
             # En Passante not implemented
@@ -159,7 +160,6 @@ class ChessBoard:
                 print(f"x/y: {(x, y)}")
                 cell = self.get_cell(x, y)
                 print(f"Cell: {cell}")
-
                 # deselect cell by clicking on it again.
                 if self.selected_cell == cell:
                     self.select_cell(None)

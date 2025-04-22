@@ -3,12 +3,14 @@ import pygame
 from src.util.config import SCREEN_SIZE
 from src.util.config import ChessBoardSurface as CBS
 from src.chess.chessBoard import ChessBoard
+from src import pngHandler
 
 class Chess:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption('Chess')
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
+        pngHandler.init()
         self.chess_board_rect = pygame.rect.Rect(CBS.x, CBS.y, CBS.w, CBS.h)
         self.chess_board_surface = self.screen.subsurface(self.chess_board_rect)
         self.chess_board = ChessBoard(self.chess_board_surface)
