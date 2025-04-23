@@ -7,6 +7,43 @@ from src.chess.pieces import Piece, Pawn, Rook, Knight, Bishop, Queen, King
 from src.chess import cell
 from src.chess import pieces
 
+class Debug:
+    def __init__(self):
+        self.active = True
+
+    def print(self,text:str):
+        if self.active:
+            print(text)
+
+class En_Passante:
+    def __init__(self):
+        self.checkPos = None
+        self.piecePos = None
+        self.team = False
+        self.active = 0
+
+    def set(self, piecePos:tuple = None, team:bool = False, active = 1):
+        self.piecePos = (piecePos[0], piecePos[1])
+        self.team = team
+        self.active = active
+        if self.team:
+            self.checkPos = (self.piecePos[0], 5)
+        else:
+            self.checkPos = (self.piecePos[0], 2)
+        Debug().print(self)
+
+    def reset(self):
+        self.checkPos = None
+        self.piecePos = None
+        self.active = 0
+
+    def __repr__(self):
+        header = f"[class '{self.__class__.__name__}' Information]"
+        positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
+        otherInfo = f" team={"White" if self.team else "Black"}"
+        return f"{header}\n{positionalInfo}\n{otherInfo}\n"
+
+
 class ChessBoard:
     """Create the ChessBoard"""
     def __init__(self, screen: pygame.Surface):
@@ -15,8 +52,8 @@ class ChessBoard:
 
         self.selected_cell = None
         self.players_turn = None
-        self.current_turn = True
-
+        self.current_turn = False
+        self.en_passante = En_Passante()
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
         # Create Cells
@@ -28,14 +65,32 @@ class ChessBoard:
         piece_row = pieces.get_piece_row()
         pawn_row = pieces.get_pawn_row()
         for x in range(8):
-            cell_black_piece = cell.cells[(x, 7)]
-            cell_black_pawn = cell.cells[(x, 6)]
-            cell_white_pawn = cell.cells[(x, 1)]
-            cell_white_piece = cell.cells[(x, 0)]
-            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=True))
-            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=True))
-            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=False))
-            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=False))
+            # get each Row which will contain pieces
+            cell_black_piece = cell.cells[(x, 0)]
+            cell_black_pawn = cell.cells[(x, 1)]
+            cell_white_pawn = cell.cells[(x, 6)]
+            cell_white_piece = cell.cells[(x, 7)]
+            # place pieces
+            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
+            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
+            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
+            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
+
+    def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
+        """
+        Returns a bool if the target cell is currently occupied.
+        Either acell.Cell, or the Grid Position of the cell can be given.
+
+        Args:
+            cell (class): The Targetcell.Cell.
+            x (int): X Grid Position.
+            y (int): Y Grid Position
+        """
+        # Get the cell.Cell if x and y is given.
+        if x and y:
+            cell = self.get_cell(x, y)
+
+        return bool(cell.piece)
     
     def make_move(self, frm:cell.Cell, to:cell.Cell):
         """
@@ -45,12 +100,52 @@ class ChessBoard:
         if frm.piece == None:
             return
 #        if frm.piece.team == self.current_turn:            return
-        if not self.is_valid_move(frm, to):
-            return
-        print(f"from: {frm}\tto{to}")
-        cell.move_piece(frm=frm, to=to)
-        self.current_turn = not self.current_turn
+        if isinstance(frm.piece, Pawn):
+            oui_passante = False
+            if self.en_passante.active:
+                if to.grid_pos[0] == self.en_passante.checkPos[0] and to.grid_pos[1] == self.en_passante.checkPos[1]:
+                    print(f"make_move en passante oppurtunity\ndest:\n{to}\n{self.en_passante}")
+                    if not frm.piece.is_valid_position(frm.grid_pos, to.grid_pos, 1 + self.en_passante.team * 8):
+                        return
+                    else:
+                        self.get_cell(self.en_passante.piecePos[0],self.en_passante.piecePos[1]).set_piece()
+                        oui_passante = True
+                        self.en_passante.reset()
+                        
+            if not oui_passante:
+                if frm.piece.team:
+                    if frm.grid_pos[1] == 6 and to.grid_pos[1] == 4 and frm.grid_pos[0] == to.grid_pos[0]:
+                        if (
+                            self.get_cell(frm.grid_pos[0], 5).piece == None and
+                            self.get_cell(frm.grid_pos[0], 4).piece == None
+                            ):
+                            self.en_passante.set(to.grid_pos, frm.piece.team)
+                    elif not self.is_valid_move(frm, to):
+                        return
+            
+                else:
+                    if frm.grid_pos[1] == 1 and to.grid_pos[1] == 3 and frm.grid_pos[0] == to.grid_pos[0]:
+                        if (
+                            self.get_cell(frm.grid_pos[0], 2).piece == None and
+                            self.get_cell(frm.grid_pos[0], 3).piece == None
+                            ):
+                            self.en_passante.set(to.grid_pos, frm.piece.team)
+                    elif not self.is_valid_move(frm, to):
+                        return
+        
 
+        elif not self.is_valid_move(frm, to):
+            return
+        Debug().print(f"from:\n{frm}\nto:\n{to}")
+        cell.move_piece(frm=frm, to=to)
+
+        # reset en Passante after oppurtunity for it
+        if self.en_passante.active > 1:
+            self.en_passante.reset()
+        if self.en_passante.active == 1:
+            self.en_passante.active = 2
+        # switch turn
+        self.current_turn = not self.current_turn
     def get_all_valid_moves(self):
         """
         A method to get all the valid moves with the current board state.
@@ -73,32 +168,7 @@ class ChessBoard:
     
     def is_valid_move(self, curr:cell.Cell, dest:cell.Cell) -> bool:
         """Check to make sure an attempted move is valid."""
-        if isinstance(curr.piece, Pawn):
-            # En Passante not implemented
-            if curr.piece.team:
-                if curr.grid_pos[1] == 6 and dest.grid_pos[1] == 4:
-                    if curr.grid_pos[0] != dest.grid_pos[0]:
-                        return False
-                    
-                    if (
-                        self.get_cell(curr.grid_pos[0], 5).piece == None and
-                        self.get_cell(curr.grid_pos[0], 4).piece == None
-                        ):
-                        return True
-                else:
-                    return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
-            else:
-                if curr.grid_pos[1] == 1 and dest.grid_pos[1] == 3:
-                    if curr.grid_pos[0] != dest.grid_pos[0]:
-                        return False
-                    if (
-                        self.get_cell(curr.grid_pos[0], 2).piece == None and
-                        self.get_cell(curr.grid_pos[0], 3).piece == None):
-                        return True
-                else:
-                    return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
-
-        elif isinstance(curr.piece,(King, Knight)):
+        if isinstance(curr.piece,(Pawn, Knight, King)):
             return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
         
         elif curr.piece != None:
@@ -136,12 +206,11 @@ class ChessBoard:
             if event.button == 1: # Leftclick Event
                 mouse_pos = pygame.mouse.get_pos()
                 mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
-                print(f"Mouse Pos: {mouse_pos}")
+#                Debug().print(f"Mouse Pos: {mouse_pos}")
                 x, y = self.convert_abs_coords_to_grid_coords(mouse_pos)
-                print(f"x/y: {(x, y)}")
+#                Debug().print(f"x/y: {(x, y)}")
                 cell = self.get_cell(x, y)
-                print(f"Cell: {cell}")
-
+#                Debug().print(f"Cell: {cell}")
                 # deselect cell by clicking on it again.
                 if self.selected_cell == cell:
                     self.select_cell(None)
