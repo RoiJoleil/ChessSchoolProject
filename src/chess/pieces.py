@@ -90,14 +90,14 @@ class Pawn(Piece):
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
         # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
-        if dest[1] - curr[1] != 1 - 2 * self.isBlack():
+        if dest[1] - curr[1] != 1 - 2 * self.team:
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
             return pieceInHex % 8 == 0
         # if the movement is diagonal the Tile has to be occupied by the other team
         elif abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 2:
-            return pieceInHex % 8 != 0 and self.isBlack() != pieceInHex // 8
+            return pieceInHex % 8 != 0 and self.team != pieceInHex // 8
         return False
 
 class Rook(Piece):

@@ -16,7 +16,6 @@ class ChessBoard:
         self.selected_cell = None
         self.players_turn = None
         self.current_turn = True
-        self.en_passante = None # if en passante is possible it will have a tuple of the coordinate of possible on passante
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
@@ -24,7 +23,7 @@ class ChessBoard:
         for x in range(8):
             for y in range(8):
                 pos = (x * cell.CELL_SIZE, y * cell.CELL_SIZE)
-                cell.create_cell(pos, x, 7-y)
+                cell.create_cell(pos, x, y)
         
         piece_row = pieces.get_piece_row()
         pawn_row = pieces.get_pawn_row()
@@ -33,26 +32,10 @@ class ChessBoard:
             cell_black_pawn = cell.cells[(x, 6)]
             cell_white_pawn = cell.cells[(x, 1)]
             cell_white_piece = cell.cells[(x, 0)]
-            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
-            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
-            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
-            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
-
-    def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
-        """
-        Returns a bool if the target cell is currently occupied.
-        Either acell.Cell, or the Grid Position of the cell can be given.
-
-        Args:
-            cell (class): The Targetcell.Cell.
-            x (int): X Grid Position.
-            y (int): Y Grid Position
-        """
-        # Get thecell.Cell if x and y is given.
-        if x and y:
-            cell = self.get_cell(x, y)
-
-        return bool(cell.piece)
+            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=True))
+            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=True))
+            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=False))
+            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=False))
     
     def make_move(self, frm:cell.Cell, to:cell.Cell):
         """
@@ -61,8 +44,7 @@ class ChessBoard:
         """
         if frm.piece == None:
             return
-        if frm.piece.team == self.current_turn:
-            return
+#        if frm.piece.team == self.current_turn:            return
         if not self.is_valid_move(frm, to):
             return
         print(f"from: {frm}\tto{to}")
