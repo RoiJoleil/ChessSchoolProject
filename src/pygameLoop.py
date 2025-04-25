@@ -4,6 +4,8 @@ from src.util.config import SCREEN_SIZE
 from src.util.config import ChessBoardSurface as CBS
 from src.chess.chessBoard import ChessBoard
 from src import pngHandler
+from src.util.filemanager import Filemanager
+from src.util.filemanager import GameConverter
 
 class Chess:
     def __init__(self):
@@ -38,5 +40,7 @@ class Chess:
             # Update the Screen
             pygame.display.flip()
 
+#        print(f"save Data\n{GameConverter.construct_save_data()}")
+        Filemanager.save_file_dialog()
         # Quit the App
         pygame.quit()

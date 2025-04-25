@@ -42,7 +42,7 @@ class En_Passante:
         positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
         otherInfo = f" team={"White" if self.team else "Black"}"
         return f"{header}\n{positionalInfo}\n{otherInfo}\n"
-
+current_turn = False
 
 class ChessBoard:
     """Create the ChessBoard"""
@@ -52,7 +52,6 @@ class ChessBoard:
 
         self.selected_cell = None
         self.players_turn = None
-        self.current_turn = False
         self.en_passante = En_Passante()
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
@@ -76,6 +75,14 @@ class ChessBoard:
             cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
             cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
 
+    def get_current_turn() -> bool:
+        global current_turn
+        return current_turn
+
+    def set_current_turn(turn:bool):
+        global current_turn
+        if turn:
+            current_turn = turn
     def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
         """
         Returns a bool if the target cell is currently occupied.
@@ -99,7 +106,8 @@ class ChessBoard:
         """
         if frm.piece == None:
             return
-#        if frm.piece.team == self.current_turn:            return
+        global current_turn
+        if frm.piece.team == current_turn:            return
         if isinstance(frm.piece, Pawn):
             oui_passante = False
             if self.en_passante.active:
@@ -145,7 +153,7 @@ class ChessBoard:
         if self.en_passante.active == 1:
             self.en_passante.active = 2
         # switch turn
-        self.current_turn = not self.current_turn
+        current_turn = not current_turn
     def get_all_valid_moves(self):
         """
         A method to get all the valid moves with the current board state.

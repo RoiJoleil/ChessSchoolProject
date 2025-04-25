@@ -2,23 +2,7 @@
 from tkinter import filedialog
 from typing import TYPE_CHECKING, Dict
 import json
-
-class Convert:
-    def tupleKeyDict_to_intKeyDict(tDict:Dict[tuple, object], ) -> Dict[int, object]:
-        if tDict == None:
-            return None
-        result = {}
-        for ele_key in tDict:
-            result[ele_key[0] + ele_key[1] * 8] = tDict[ele_key]
-        return result
-    def intKeyDict_to_tupleKeyDict(iDict:Dict[int, object], ) -> Dict[tuple, object]:
-        if iDict == None:
-            return None
-        result = {}
-        for ele_key in iDict:
-            key = int(ele_key)            
-            result[(key % 8, key // 8)] = iDict[ele_key]
-        return result
+from src.util.dictConverter import GameConverter
 
 class Filemanager:
     def __init__(self):
@@ -27,22 +11,28 @@ class Filemanager:
         filepath = filedialog.askopenfilename(
                                               title="Open Game File",
                                               filetypes=[("json file","*.json")])
+        if filepath == None:
+            return
+        
         try:
             buffer = None
             with open(filepath, mode="r") as file:
                 buffer = json.load(file)
-            return Convert.intKeyDict_to_tupleKeyDict(buffer)
+            GameConverter.load_save_data(buffer) if buffer else print("ERROR")
         except:
-            return None
+            print("open failed")
         
-    def save_file_dialog(dict:Dict):
-        filepath = filedialog.asksaveasfilename(
+    def save_file_dialog():
+        path_of_file = filedialog.asksaveasfilename(
                                                 title="Save Game File",
                                                 filetypes=[("json file","*.json")],
                                                 defaultextension=".json")
+        buffer = GameConverter.construct_save_data()
+
+        if buffer == None:
+            return
         try:
-            buffer = Convert.tupleKeyDict_to_intKeyDict(dict)
-            with open(filepath, mode="w") as file:
+            with open(path_of_file, mode="w") as file:
                 json.dump(buffer, file)
-        except:
-            pass
+        except Exception as e:
+            print(f"Saving File Failed:\t{repr(e)}")
