@@ -84,7 +84,7 @@ class Pawn(Piece):
         self.piece = pngHandler.get_pygame_image(name)
         self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
-    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int):
+    def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int) -> bool:
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
         # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
         if dest[1] - curr[1] != 1 - 2 * self.team:
@@ -165,6 +165,7 @@ class King(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 6 + 8 * self.team
+        self.castling = {(2,0),(6,0)} if self.team else {(2,7),(6,7)}
 
     def _set_styling(self):
         name = "white-king" if self.team else "black-king"

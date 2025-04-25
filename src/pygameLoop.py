@@ -41,6 +41,6 @@ class Chess:
             pygame.display.flip()
 
 #        print(f"save Data\n{GameConverter.construct_save_data()}")
-        Filemanager.save_file_dialog()
+#        Filemanager.save_file_dialog()
         # Quit the App
         pygame.quit()

@@ -1,19 +1,10 @@
 import pygame
-from typing import List
+from typing import List, Dict
 from src.util.config import CellStyling, StartTable, PieceStyling
 from src.util.config import CellStyling as CS
 from src.util.config import PieceStyling as PS
-from src.chess.pieces import Piece, Pawn, Rook, Knight, Bishop, Queen, King
-from src.chess import cell
+from src.chess import cell, pieces
 from src.chess import pieces
-
-class Debug:
-    def __init__(self):
-        self.active = True
-
-    def print(self,text:str):
-        if self.active:
-            print(text)
 
 class En_Passante:
     def __init__(self):
@@ -30,7 +21,6 @@ class En_Passante:
             self.checkPos = (self.piecePos[0], 5)
         else:
             self.checkPos = (self.piecePos[0], 2)
-        Debug().print(self)
 
     def reset(self):
         self.checkPos = None
@@ -42,17 +32,22 @@ class En_Passante:
         positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
         otherInfo = f" team={"White" if self.team else "Black"}"
         return f"{header}\n{positionalInfo}\n{otherInfo}\n"
-current_turn = False
+current_turn = True
 
 class ChessBoard:
     """Create the ChessBoard"""
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
+
+        self.white_king = None
+        self.black_king = None
         self._initialise_cells()
+
 
         self.selected_cell = None
         self.players_turn = None
         self.en_passante = En_Passante()
+
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
         # Create Cells
@@ -74,6 +69,9 @@ class ChessBoard:
             cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
             cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
             cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
+        
+        self.white_king = self.get_cell(4,0).piece
+        self.black_king = self.get_cell(4,7).piece
 
     def get_current_turn() -> bool:
         global current_turn
@@ -83,6 +81,7 @@ class ChessBoard:
         global current_turn
         if turn:
             current_turn = turn
+
     def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
         """
         Returns a bool if the target cell is currently occupied.
@@ -107,8 +106,9 @@ class ChessBoard:
         if frm.piece == None:
             return
         global current_turn
-        if frm.piece.team == current_turn:            return
-        if isinstance(frm.piece, Pawn):
+        if frm.piece.team != current_turn:
+            return
+        if isinstance(frm.piece,pieces.Pawn):
             oui_passante = False
             if self.en_passante.active:
                 if to.grid_pos[0] == self.en_passante.checkPos[0] and to.grid_pos[1] == self.en_passante.checkPos[1]:
@@ -144,7 +144,33 @@ class ChessBoard:
 
         elif not self.is_valid_move(frm, to):
             return
-        Debug().print(f"from:\n{frm}\nto:\n{to}")
+        if isinstance(frm.piece, pieces.Rook):
+            if frm.piece.team:
+                if self.white_king.castling:
+                    if(frm.grid_pos[0] == 0,frm.grid_pos[0] == 0):
+                        if((2,0) in self.white_king.castling):
+                            self.white_king.castling.remove(2,0)
+                    if(frm.grid_pos[0] == 7,frm.grid_pos[0] == 0):
+                        if((6,0) in self.white_king.castling):
+                            self.white_king.castling.remove(6,0)
+            else:
+                if self.black_king.castling:
+                    if(frm.grid_pos[0] == 0,frm.grid_pos[0] == 7):
+                        if((2,7) in self.black_king.castling):
+                            self.black_king.castling.remove(2,7)
+                    if(frm.grid_pos[0] == 7,frm.grid_pos[0] == 7):
+                        if((6,7) in self.black_king.castling):
+                            self.black_king.castling.remove(6,7)
+
+
+        elif isinstance(frm.piece, pieces.King):
+            if frm.piece.team:
+                if self.white_king.castling:
+                    self.white_king.castling = None
+            else:
+                if self.black_king.castling:
+                    self.black_king.castling = None
+            
         cell.move_piece(frm=frm, to=to)
 
         # reset en Passante after oppurtunity for it
@@ -154,13 +180,29 @@ class ChessBoard:
             self.en_passante.active = 2
         # switch turn
         current_turn = not current_turn
-    def get_all_valid_moves(self):
+
+    def get_all_valid_moves(self) -> Dict[tuple, List[cell.Cell]]: 
         """
         A method to get all the valid moves with the current board state.
         This method will be used for bots if they are implemented
         """
-        raise NotImplementedError()
-    
+        result = {}
+        for x in range(0,8):
+            for y in range(0,8):
+                temp = self.get_cell(x, y)
+                result[temp.grid_pos] = self.get_valid_moves(temp)
+        return result
+
+    def in_check(self, curr:cell.Cell, team:bool) -> bool:
+        #beware of recursions
+        for x in range(0, 8):
+            for y in range(0,8):
+                threat = self.get_cell(x, y)
+                if threat.piece if threat else False:
+                    if (threat.piece.is_valid_position(threat.grid_pos, curr.grid_pos, team)):
+                        return True
+        return False
+
     def signOfNumber(self, number):
         if number == 0:
             return 0
@@ -172,15 +214,99 @@ class ChessBoard:
         Optionally:
             Implement a highlight on cells to visually help the user.
         """
-        raise NotImplementedError()
+        if curr.piece == None:
+            return []
+        result = []
+
+        if isinstance(curr.piece,pieces.Pawn):
+            # singular step forward
+            for i in range(-1, 2):
+                dest = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1] + (1 if curr.piece.team else -1))
+                if dest == None:
+                    continue
+                if curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0):
+                    result.append(dest)
+            dest = self.get_cell(curr.grid_pos[0], curr.grid_pos[1] + 2 *(1 if curr.piece.team else -1))
+            # double step forward
+            if dest:
+                if curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0):
+                    result.append(dest)
+
+        elif isinstance(curr.piece, pieces.Rook):
+            for i in [-1,1]:
+                temp = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1])
+                while temp:
+                    if not curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                        break
+                    result.append(temp)
+                    temp = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1])
+                temp = self.get_cell(curr.grid_pos[0], curr.grid_pos[1] + i)
+                while temp:
+                    if not curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                        break
+                    result.append(temp)
+                    temp = self.get_cell(curr.grid_pos[0], curr.grid_pos[1] + i)
+
+        elif isinstance(curr.piece, pieces.Knight):
+            for i in [-1, 1]:
+                for j in [-2, 2]:
+                    temp = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1] + j)
+                    if temp == None:
+                        continue
+                    if curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                        result.append(temp)
+                    temp = self.get_cell(curr.grid_pos[0] + j, curr.grid_pos[1] + i)
+                    if temp == None:
+                        continue
+                    if curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                        result.append(temp)
+
+        elif isinstance(curr.piece, pieces.Bishop):
+            for i in [-1, 1]:
+                for j in [-1, 1]:
+                    temp = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1] + j)
+                    while temp:
+                        if not curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                            break
+                        result.append(temp)
+                        temp = self.get_cell(curr.grid_pos[0] + i, curr.grid_pos[1] + j)
+
+        elif isinstance(curr.piece, pieces.Queen):
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    if i == 0 and j == 0:
+                        continue
+                    temp = self.get_cell(curr.grid_pos[0] + i,curr.grid_pos[1] + j)
+                    while temp:
+                        if not curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                            break
+                        result.append(temp)
+                        temp = self.get_cell(curr.grid_pos[0] + i,curr.grid_pos[1] + j)
+
+        elif isinstance(curr.piece, pieces.King):
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    temp = self.get_cell(curr.grid_pos[0] + i,curr.grid_pos[1] + j)
+                    if temp:
+                        continue
+                    if curr.piece.is_valid_position(curr.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                        result.append(temp)
+        return result
     
     def is_valid_move(self, curr:cell.Cell, dest:cell.Cell) -> bool:
         """Check to make sure an attempted move is valid."""
-        if isinstance(curr.piece,(Pawn, Knight, King)):
-            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0)
+        if isinstance(curr.piece,(pieces.Pawn, pieces.Knight)):
+            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0)
+        if isinstance(curr.piece, pieces.King):
+            if self.in_check(dest, curr.piece.team):
+                return False
+            if dest.grid_pos in curr.piece.castling:
+                return True
+            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece else 0)
+            
         
-        elif curr.piece != None:
-            if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece != None else 0):
+        elif curr.piece:
+            if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0):
                 return False
             diff = (self.signOfNumber(dest.grid_pos[0] - curr.grid_pos[0]), self.signOfNumber(dest.grid_pos[1] - curr.grid_pos[1]))
             for i in range(1,8):

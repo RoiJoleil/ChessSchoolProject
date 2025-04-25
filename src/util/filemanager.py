@@ -18,6 +18,7 @@ class Filemanager:
             buffer = None
             with open(filepath, mode="r") as file:
                 buffer = json.load(file)
+            print(buffer)
             GameConverter.load_save_data(buffer) if buffer else print("ERROR")
         except:
             print("open failed")
