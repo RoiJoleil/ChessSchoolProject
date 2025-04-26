@@ -60,6 +60,11 @@ def get_cell(x: int, y: int) -> Cell:
     global cells
     return cells.get((x, y), None)
 
+def get_cells():
+    """Get the entire board"""
+    global cells
+    return cells
+
 def set_focus(cells: List[Cell], focus_type: str = None):
     """
     Sets a focus on a cell. Valid focus types are:

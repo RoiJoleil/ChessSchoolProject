@@ -88,22 +88,6 @@ class Board:
         if turn:
             current_turn = turn
 
-    def is_occupied(self, cell: cell.Cell = None, x: int = None, y: int = None) -> bool:
-        """
-        Returns a bool if the target cell is currently occupied.
-        Either acell.Cell, or the Grid Position of the cell can be given.
-
-        Args:
-            cell (class): The Targetcell.Cell.
-            x (int): X Grid Position.
-            y (int): Y Grid Position
-        """
-        # Get the cell.Cell if x and y is given.
-        if x and y:
-            cell = self.get_cell(x, y)
-
-        return bool(cell.piece)
-    
     def make_move(self, frm:cell.Cell, to:cell.Cell):
         """
         This method updates the necessary positions of the pieces involved.
@@ -307,6 +291,7 @@ class Board:
         """Check to make sure an attempted move is valid."""
         if isinstance(curr.piece,(pieces.Pawn, pieces.Knight)):
             return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0)
+        
         if isinstance(curr.piece, pieces.King):
             if self.in_check(dest, curr.piece.team):
                 return False
@@ -314,7 +299,6 @@ class Board:
                 return True
             return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece else 0)
             
-        
         elif curr.piece:
             if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0):
                 return False
