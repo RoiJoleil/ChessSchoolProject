@@ -1,4 +1,4 @@
-from src.pygameLoop import Chess
+from src.engine import run
 
 if __name__ == '__main__':
-    Chess().run()
+    run()

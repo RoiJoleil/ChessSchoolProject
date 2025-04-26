@@ -1,20 +1,10 @@
 import pygame
 from src import pngHandler
 from typing import List, TYPE_CHECKING
+from src.settings import PIECE_SIZE
 
 if TYPE_CHECKING:
     from src.chess import cell
-
-PIECE_BLACK = (0, 0, 0)
-PIECE_WHITE = (255, 255, 255)
-PIECE_BORDER_WIDTH = 2
-PIECE_SIZE = 75
-PAWN = (0, 215, 215)
-ROOK = (215, 0, 0)
-BISHOP = (0, 215, 0)
-KNIGHT = (145, 25, 100)
-QUEEN = (255, 0, 255)
-KING = (255, 255, 0)
 
 chessPieces = {
     1:"pawn",
@@ -32,7 +22,6 @@ chessTeam = {
 }
 
 class Piece:
-
     def __init__(self, cell: "cell.Cell", team: bool):
         # Positional Information
         self.cell = cell
@@ -57,7 +46,6 @@ class Piece:
 
     def draw(self, surface: pygame.Surface):
         surface.blit(self.piece, (self.rect.x, self.rect.y))
-        rect = pygame.rect.Rect(self.rect.x, self.rect.y, PIECE_SIZE, PIECE_SIZE)
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
@@ -82,7 +70,6 @@ class Pawn(Piece):
     def _set_styling(self):
         name = "white-pawn" if self.team else "black-pawn"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr:tuple, dest:tuple, pieceInHex:int) -> bool:
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
@@ -107,7 +94,6 @@ class Rook(Piece):
     def _set_styling(self):
         name = "white-rook" if self.team else "black-rook"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.team and pieceInHex % 8 != 0):
@@ -122,7 +108,6 @@ class Knight(Piece):
     def _set_styling(self):
         name = "white-knight" if self.team else "black-knight"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.team and pieceInHex % 8 != 0):
@@ -137,7 +122,6 @@ class Bishop(Piece):
     def _set_styling(self):
         name = "white-bishop" if self.team else "black-bishop"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.team and pieceInHex % 8 != 0):
@@ -152,7 +136,6 @@ class Queen(Piece):
     def _set_styling(self):
         name = "white-queen" if self.team else "black-queen"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.team and pieceInHex % 8 != 0):
@@ -170,7 +153,6 @@ class King(Piece):
     def _set_styling(self):
         name = "white-king" if self.team else "black-king"
         self.piece = pngHandler.get_pygame_image(name)
-        self.piece = pngHandler.rescale(self.piece, PIECE_SIZE, PIECE_SIZE)
 
     def is_valid_position(self, curr, dest, pieceInHex) -> bool:
         if (pieceInHex // 8 == self.team and pieceInHex % 8 != 0):

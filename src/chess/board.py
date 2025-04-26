@@ -1,11 +1,16 @@
 import pygame
 from typing import List, Dict
-from src.util.config import CellStyling, StartTable, PieceStyling
-from src.util.config import CellStyling as CS
-from src.util.config import PieceStyling as PS
+from src.settings import CELL_SIZE
 from src.chess import cell, pieces
 from src.chess import pieces
 
+"""
+I cant refactor this file, as there is so much here that shouldnt be here.
+I would need to effectivly rewrite your entire code to do it. - Joel
+"""
+
+# This cass shouldnt be here.
+# What is this class doing exactly? - Joel
 class En_Passante:
     def __init__(self):
         self.checkPos = None
@@ -30,11 +35,12 @@ class En_Passante:
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
         positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
-        otherInfo = f" team={"White" if self.team else "Black"}"
+        otherInfo = f" team={self.team}"
         return f"{header}\n{positionalInfo}\n{otherInfo}\n"
-current_turn = True
+    
+current_turn = True # Why??? we have self.players_turn - Joel
 
-class ChessBoard:
+class Board:
     """Create the ChessBoard"""
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
@@ -42,7 +48,6 @@ class ChessBoard:
         self.white_king = None
         self.black_king = None
         self._initialise_cells()
-
 
         self.selected_cell = None
         self.players_turn = None
@@ -79,6 +84,7 @@ class ChessBoard:
 
     def set_current_turn(turn:bool):
         global current_turn
+        # This Function does nothing ??? - Joel
         if turn:
             current_turn = turn
 
@@ -103,6 +109,12 @@ class ChessBoard:
         This method updates the necessary positions of the pieces involved.
         This method makes no validation checks if the move is actually valid.
         """
+
+        # I dont know what is going on here, but its to much.
+        # Having 100 lines of code for a single function is way to much.
+        # All the seperate pieces in this function have to be seperated into their own function with descriptives
+        # Names so its easier understandable what is actually going on. - Joel
+
         if frm.piece == None:
             return
         global current_turn
@@ -141,7 +153,6 @@ class ChessBoard:
                     elif not self.is_valid_move(frm, to):
                         return
         
-
         elif not self.is_valid_move(frm, to):
             return
         if isinstance(frm.piece, pieces.Rook):
@@ -161,7 +172,6 @@ class ChessBoard:
                     if(frm.grid_pos[0] == 7,frm.grid_pos[0] == 7):
                         if((6,7) in self.black_king.castling):
                             self.black_king.castling.remove(6,7)
-
 
         elif isinstance(frm.piece, pieces.King):
             if frm.piece.team:
@@ -322,39 +332,41 @@ class ChessBoard:
         Turns the screen coordinates into grid coordinates.
         This method is used to identify what cells the user clicked on.
         """
-        x, y = pos[0] // CS.CELL_SIZE, pos[1] // CS.CELL_SIZE
+        x, y = pos[0] // CELL_SIZE, pos[1] // CELL_SIZE
         return (x, y)
 
     def get_cell(self, x: int, y: int) ->cell.Cell:
         """
         Return thecell.Cell for the given board coordinates.
         """
-        return cell.get_cell((x, y))
+        return cell.get_cell(x, y)
 
     def select_cell(self, cell:cell.Cell):
         """Selects a cell to do actions with. 'None' is also a valid argument."""
         self.selected_cell = cell
 
     def event(self, event: pygame.event.Event):
+        """Handle Click Events from the user"""
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # Leftclick Event
                 mouse_pos = pygame.mouse.get_pos()
                 mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
-#                Debug().print(f"Mouse Pos: {mouse_pos}")
                 x, y = self.convert_abs_coords_to_grid_coords(mouse_pos)
-#                Debug().print(f"x/y: {(x, y)}")
-                cell = self.get_cell(x, y)
-#                Debug().print(f"Cell: {cell}")
+                clicked_cell = self.get_cell(x, y)
                 # deselect cell by clicking on it again.
-                if self.selected_cell == cell:
+                if self.selected_cell == clicked_cell:
+                    cell.set_focus([self.selected_cell], None)
                     self.select_cell(None)
                 # move piece if we have a cell selected.
                 elif self.selected_cell:
-                    self.make_move(self.selected_cell, cell)
+                    self.make_move(self.selected_cell, clicked_cell)
+                    cell.set_focus([self.selected_cell], None)
                     self.select_cell(None)
                 # select a cell if the clicked cell has a piece.
-                elif cell.piece:
-                    self.select_cell(cell)
+                elif clicked_cell.piece:
+                    self.select_cell(clicked_cell)
+                    cell.set_focus([self.selected_cell], "selected")
+                    
 
     def draw(self):
         """Draw the individual chessboard cells"""

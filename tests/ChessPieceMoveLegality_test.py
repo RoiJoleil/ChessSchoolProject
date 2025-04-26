@@ -1,9 +1,9 @@
 import unittest
 from src.chess.pieces import Pawn, Rook, Knight, Bishop, Queen, King
-from src.chess.chessBoard import ChessBoard
+from src.chess.board import Board
 class ChessPieceMoveLegality_test(unittest.TestCase):
 
-    ChessBoardOfChessPieceMoveLegality_test = ChessBoard(None)
+    ChessBoardOfChessPieceMoveLegality_test = Board(None)
 
 #
 #   Alle unitests sind unvollständig
