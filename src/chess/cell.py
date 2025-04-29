@@ -7,6 +7,34 @@ from src.settings import CELL_SIZE
 if TYPE_CHECKING:
     from src.chess.pieces import Piece
 
+class En_Passante:
+    def __init__(self):
+        self.checkPos = None
+        self.piecePos = None
+        self.team = False
+        self.active = 0
+
+    def set(self, piecePos:tuple = None, team:bool = False, active = 1):
+        self.piecePos = (piecePos[0], piecePos[1])
+        self.team = team
+        self.active = active
+        if self.team:
+            self.checkPos = (self.piecePos[0], 5)
+        else:
+            self.checkPos = (self.piecePos[0], 2)
+
+    def reset(self):
+        self.checkPos = None
+        self.piecePos = None
+        self.active = 0
+
+    def __repr__(self):
+        header = f"[class '{self.__class__.__name__}' Information]"
+        positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
+        otherInfo = f" team={self.team}"
+        return f"{header}\n{positionalInfo}\n{otherInfo}\n"
+    
+en_passante = En_Passante()
 
 class Cell:
     def __init__(self, pos, grid_x, grid_y):
@@ -93,6 +121,9 @@ def move_piece(frm: Cell, to: Cell):
     to.piece = frm.piece
     to.piece.move(to.grid_pos[0], to.grid_pos[1])
     frm.piece = None
+    global en_passante
+    en_passante.reset()
+
 
 def is_occupied(cell: Cell = None, x: int = None, y: int = None) -> bool:
     """

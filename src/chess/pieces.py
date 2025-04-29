@@ -44,10 +44,11 @@ class Piece:
         self.cell = cell.get_cell(x, y)
         self.set_position(self.cell.rect.x, self.cell.rect.y)
 
+
     def set_position(self, x: int, y: int):
         self.rect.x = x
         self.rect.y = y
-
+    
     def draw(self, surface: pygame.Surface):
         surface.blit(self.piece, (self.rect.x, self.rect.y))
 
@@ -66,7 +67,7 @@ class Piece:
         """
         raise NotImplementedError()
     
-    def is_valid_move(self, dest : "cell.Cell") -> bool:
+    def is_valid_move(self, dest : "cell.Cell", ignore) -> bool:
         raise not NotImplementedError
     
     def get_valid_moves(self) -> List["cell.Cell"]:
@@ -92,8 +93,10 @@ class Pawn(Piece):
             return curr[0] == dest[0]
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
-            temp = cell.get_cell(dest[0], dest[1])
-            return self.team != temp.piece.team
+            if cell.en_passante.active:
+                return cell.en_passante.team != self.team
+            else:
+                return self.team != temp.piece.team
         return False
     
     def is_valid_move(self, dest, ignore=None):
@@ -106,6 +109,7 @@ class Pawn(Piece):
                         )
             else:
                 if(dest.grid_pos[1] == 3):
+
                     return (
                         cell.get_cell(dest.grid_pos[0], 3).piece == None and
                         cell.get_cell(dest.grid_pos[0], 2).piece == None
@@ -128,7 +132,9 @@ class Pawn(Piece):
         if dest:
             if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
                 result.append(dest)
-
+    def move(self, x, y):
+        cell.en_passante.set((x, y), self.team)
+        super().move(x, y)
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
@@ -372,6 +378,21 @@ class King(Piece):
                 result.append(cell.get_cell(i[0], i[1]))
         return result
     
+    def castling_kingside(self):
+        if self.team:
+            cell.move_piece(self.cell, cell.get_cell(6,7))
+            cell.move_piece(cell.get_cell(7, 7),cell.get_cell(5,7))
+        else:
+            cell.move_piece(self.cell, cell.get_cell(6, 0))
+            cell.move_piece(cell.get_cell(7, 0),cell.get_cell(5, 0))
+    
+    def castling_queenside(self):
+        if self.team:
+            cell.move_piece(self.cell, cell.get_cell(2,7))
+            cell.move_piece(cell.get_cell(0, 7),cell.get_cell(3,7))
+        else:
+            cell.move_piece(self.cell, cell.get_cell(2, 0))
+            cell.move_piece(cell.get_cell(0, 0),cell.get_cell(3, 0))
 def get_pawn_row() -> List[Piece]:
     """Return a list of pawns."""
     return [Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn]

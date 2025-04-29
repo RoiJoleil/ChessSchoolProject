@@ -9,35 +9,6 @@ I cant refactor this file, as there is so much here that shouldnt be here.
 I would need to effectivly rewrite your entire code to do it. - Joel
 """
 
-# This cass shouldnt be here.
-# What is this class doing exactly? - Joel
-class En_Passante:
-    def __init__(self):
-        self.checkPos = None
-        self.piecePos = None
-        self.team = False
-        self.active = 0
-
-    def set(self, piecePos:tuple = None, team:bool = False, active = 1):
-        self.piecePos = (piecePos[0], piecePos[1])
-        self.team = team
-        self.active = active
-        if self.team:
-            self.checkPos = (self.piecePos[0], 5)
-        else:
-            self.checkPos = (self.piecePos[0], 2)
-
-    def reset(self):
-        self.checkPos = None
-        self.piecePos = None
-        self.active = 0
-
-    def __repr__(self):
-        header = f"[class '{self.__class__.__name__}' Information]"
-        positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
-        otherInfo = f" team={self.team}"
-        return f"{header}\n{positionalInfo}\n{otherInfo}\n"
-    
 current_turn = True # Why??? we have self.players_turn - Joel
 
 class Board:
@@ -51,7 +22,6 @@ class Board:
 
         self.selected_cell = None
         self.players_turn = None
-        self.en_passante = En_Passante()
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
@@ -109,12 +79,6 @@ class Board:
         
         cell.move_piece(frm=frm, to=to)
 
-        # reset en Passante after oppurtunity for it
-        if self.en_passante.active > 1:
-            self.en_passante.reset()
-        if self.en_passante.active == 1:
-            self.en_passante.active = 2
-        # switch turn
 #        current_turn = not current_turn
 
     def get_all_valid_moves(self) -> Dict[tuple, List[cell.Cell]]: 
