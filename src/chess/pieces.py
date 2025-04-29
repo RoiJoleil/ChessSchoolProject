@@ -93,7 +93,8 @@ class Pawn(Piece):
             temp = cell.get_cell(dest[0], dest[1])
             return self.team != temp.piece.team
         return False
-    def is_valid_move(self, dest):
+    
+    def is_valid_move(self, dest, ignore=None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
             if self.team:
                 if(dest.grid_pos[1] == 4):
@@ -144,7 +145,8 @@ class Rook(Piece):
             if temp.piece.team == self.team:
                 return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
-    def is_valid_move(self, dest):
+    
+    def is_valid_move(self, dest, ignore=None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False        
         global sign_of_number
@@ -163,6 +165,7 @@ class Rook(Piece):
             if temp.piece is not None:
                 return False
         return False
+    
     def get_valid_moves(self):
         result = []
         for i in [-1, 1]:
@@ -195,7 +198,7 @@ class Knight(Piece):
             if temp.piece.team == self.team:
                 return False
         return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
-    def is_valid_move(self, dest):
+    def is_valid_move(self, dest, ignore=None):
         return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
     def get_valid_moves(self):
         result = []
@@ -227,7 +230,7 @@ class Bishop(Piece):
             if temp.piece.team == self.team:
                 return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
-    def is_valid_move(self, dest):
+    def is_valid_move(self, dest, ignore=None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False        
         global sign_of_number
@@ -276,9 +279,9 @@ class Queen(Piece):
             return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
-    def is_valid_move(self, dest):
+    def is_valid_move(self, dest, ignore=None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
-            return False        
+            return False
         global sign_of_number
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
@@ -292,9 +295,10 @@ class Queen(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None:
+            if temp.piece is not None and temp.piece != ignore.piece:
                 return False
         return False
+    
     def get_valid_moves(self):
         result = []
         for i in range(-1, 2):
@@ -324,8 +328,8 @@ class King(Piece):
         for x in range(0, 8):
             for y in range(0,8):
                 threat = cell.get_cell(x, y)
-                if threat.piece if threat else False:
-                    if (threat.piece.is_valid_move(check)):
+                if threat and threat.piece and threat.piece.team != self.team:
+                    if (threat.piece.is_valid_move(check, self.cell)):
                         return True
         return False
 
@@ -335,7 +339,8 @@ class King(Piece):
             if temp.piece.team == self.team:
                 return False
         return 0 < (curr[0] - dest[0]) ** 2 + (curr[1] - dest[1]) ** 2 <= 2
-    def is_valid_move(self, dest,):
+    
+    def is_valid_move(self, dest, ignore=None):
         if dest in self.castling:
             if dest.grid_pos[1] - self.cell.grid_pos[1] == 2:
 
@@ -346,8 +351,11 @@ class King(Piece):
                     self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
                 ):
                     return not (self.in_check(cell.get_cell) or self.in_check(dest))
+                
         if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return not self.in_check(dest)
+        return None
+        
     def get_valid_moves(self):
         result = []
         for i in range(-1, 2):

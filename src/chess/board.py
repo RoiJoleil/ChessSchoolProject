@@ -105,7 +105,9 @@ class Board:
 #            return
         
         if not frm.piece.is_valid_move(to):
+            print(f"Not Valid Move")
             return
+        print(f"Is Valid Move")
         
         cell.move_piece(frm=frm, to=to)
 
