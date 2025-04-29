@@ -96,7 +96,7 @@ def draw(surface: pygame.Surface):
 def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
     to.piece = frm.piece
-    to.piece.set_position(to.rect.x, to.rect.y)
+    to.piece.move(to.grid_pos[0], to.grid_pos[1])
     frm.piece = None
 
 def is_occupied(cell: Cell = None, x: int = None, y: int = None) -> bool:
