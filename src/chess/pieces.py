@@ -65,8 +65,10 @@ class Piece:
             pieceInHex(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
         """
         raise NotImplementedError()
+    
     def is_valid_move(self, dest : "cell.Cell") -> bool:
         raise not NotImplementedError
+    
     def get_valid_moves(self) -> List["cell.Cell"]:
         raise NotImplementedError()
 
@@ -93,6 +95,7 @@ class Pawn(Piece):
             temp = cell.get_cell(dest[0], dest[1])
             return self.team != temp.piece.team
         return False
+    
     def is_valid_move(self, dest):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
             if self.team:
@@ -126,7 +129,6 @@ class Pawn(Piece):
             if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
                 result.append(dest)
 
-
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
@@ -144,6 +146,7 @@ class Rook(Piece):
             if temp.piece.team == self.team:
                 return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
+    
     def is_valid_move(self, dest):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False        
@@ -163,6 +166,7 @@ class Rook(Piece):
             if temp.piece is not None:
                 return False
         return False
+    
     def get_valid_moves(self):
         result = []
         for i in [-1, 1]:
@@ -197,6 +201,7 @@ class Knight(Piece):
         return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
     def is_valid_move(self, dest):
         return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
+    
     def get_valid_moves(self):
         result = []
         for i in [-1, 1]:
@@ -227,6 +232,7 @@ class Bishop(Piece):
             if temp.piece.team == self.team:
                 return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
+    
     def is_valid_move(self, dest):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False        
@@ -246,6 +252,7 @@ class Bishop(Piece):
             if temp.piece is not None:
                 return False
         return False
+    
     def get_valid_moves(self):
         result = []
         for i in [-1, 1]:
@@ -295,6 +302,7 @@ class Queen(Piece):
             if temp.piece is not None:
                 return False
         return False
+    
     def get_valid_moves(self):
         result = []
         for i in range(-1, 2):
@@ -335,6 +343,7 @@ class King(Piece):
             if temp.piece.team == self.team:
                 return False
         return 0 < (curr[0] - dest[0]) ** 2 + (curr[1] - dest[1]) ** 2 <= 2
+    
     def is_valid_move(self, dest,):
         if dest in self.castling:
             if dest.grid_pos[1] - self.cell.grid_pos[1] == 2:
@@ -348,6 +357,7 @@ class King(Piece):
                     return not (self.in_check(cell.get_cell) or self.in_check(dest))
         if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return not self.in_check(dest)
+        
     def get_valid_moves(self):
         result = []
         for i in range(-1, 2):
