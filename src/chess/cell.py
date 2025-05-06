@@ -4,8 +4,7 @@ from src import pngHandler
 from typing import TYPE_CHECKING, Dict, Optional, List
 from src.settings import CELL_SIZE
 
-if TYPE_CHECKING:
-    from src.chess.pieces import Piece
+from src.chess import pieces
 
 class En_Passante:
     def __init__(self):
@@ -35,6 +34,12 @@ class En_Passante:
         return f"{header}\n{positionalInfo}\n{otherInfo}\n"
     
 en_passante = En_Passante()
+white_king:pieces.King = None
+black_king:pieces.King = None
+kings = {
+    True  : white_king,
+    False : black_king
+}
 
 class Cell:
     def __init__(self, pos, grid_x, grid_y):
@@ -55,7 +60,7 @@ class Cell:
     def get_position(self) -> tuple:
         return (self.rect.x, self.rect.y)
 
-    def set_piece(self, piece: "Piece" = None):
+    def set_piece(self, piece: "pieces.Piece" = None):
         self.piece = piece
 
     def _set_styling(self):
@@ -80,10 +85,13 @@ class Cell:
 cells: Dict[tuple, Cell] = {} # {tuple: Cell}
 
 # API
-def create_cell(pos: tuple, grid_x: int, grid_y: int):
+def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = None):
     cell = Cell(pos, grid_x, grid_y)
+    if piece:
+        cell.set_piece(piece)
+        cell.piece.cell = cell
     cells[cell.grid_pos] = cell
-
+    return cell
 def get_cell(x: int, y: int) -> Cell:
     global cells
     return cells.get((x, y), None)
@@ -101,6 +109,8 @@ def set_focus(cells: List[Cell], focus_type: str = None):
     - prev
     - None
     """
+    if not cells:
+        return
     for cell in cells:
         if focus_type == "selected":
             cell.set_focus(pngHandler.get_pygame_image("selected-focus"))
@@ -116,6 +126,35 @@ def clear_board():
     global cells
     cells.clear()
 
+def init_standard_board():
+    for x in range(8):
+        for y in range(8):
+            pos = (x * CELL_SIZE, y * CELL_SIZE)
+            # Pawn Rows
+            if y in [1,6]:
+                create_cell(pos, x, y, pieces.Pawn(None, team= bool(y // 4)))
+            # Nobility Row
+            elif y in [0,7]:
+                team = bool(y // 4)
+                # Rooks
+                if x in [0,7]:
+                    create_cell(pos, x, y, pieces.Rook(None, team= team))
+                # Knights
+                if x in [1,6]:
+                    create_cell(pos, x, y, pieces.Knight(None, team= team))
+                # Bishops
+                if x in [2,5]:
+                    create_cell(pos, x, y, pieces.Bishop(None, team= team))
+                # Queen
+                if x == 3:
+                    create_cell(pos, x, y, pieces.Queen(None, team= team))
+                # King
+                if x == 4:
+                    global kings
+                    kings[team] = create_cell(pos, x, y, pieces.King(None, team= team)).piece
+            else:
+                create_cell(pos, x, y)
+
 def draw(surface: pygame.Surface):
     global cells
     for cell in cells.values():
@@ -127,21 +166,11 @@ def move_piece(frm: Cell, to: Cell):
 
     to.piece = frm.piece
     to.piece.move(to.grid_pos[0], to.grid_pos[1])
-    frm.piece = None
-    en_passante.reset()
-
-def is_occupied(cell: Cell = None, x: int = None, y: int = None) -> bool:
-    """
-    Returns a bool if the target cell is currently occupied.
-    Either a Cell, or the Grid Position of the cell can be given.
-
-    Args:
-        cell (class): The Target Cell.
-        x (int): X Grid Position
-        y (int): Y Grid Position
-    """
-    # Get the cell.Cell if x and y is given.
-    if x and y:
-        cell = get_cell(x, y)
-
-    return bool(cell.piece)
+    if isinstance(to.piece, pieces.Rook):
+        global kings
+        kings[to.piece.team].remove_castling(frm.grid_pos)
+    global en_passante
+    if en_passante.active > 1:
+        en_passante.reset()
+    elif en_passante.active == 1:
+        en_passante.active += 1
