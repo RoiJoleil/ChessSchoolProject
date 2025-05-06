@@ -3,7 +3,6 @@ import random
 from src import pngHandler
 from typing import TYPE_CHECKING, Dict, Optional, List
 from src.settings import CELL_SIZE
-
 from src.chess import pieces
 
 
@@ -92,9 +91,15 @@ def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = Non
         cell.piece.cell = cell
     cells[cell.grid_pos] = cell
     return cell
+
 def get_cell(x: int, y: int) -> Cell:
     global cells
     return cells.get((x, y), None)
+
+def get_cells():
+    """Get the entire board"""
+    global cells
+    return cells
 
 def set_focus(cells: List[Cell], focus_type: str = None):
     """
@@ -120,36 +125,6 @@ def clear_board():
     """For restarting a game."""
     global cells
     cells.clear()
-
-def init_standard_board():
-    for x in range(8):
-        for y in range(8):
-            pos = (x * CELL_SIZE, y * CELL_SIZE)
-            # Pawn Rows
-            if y in [1,6]:
-                create_cell(pos, x, y, pieces.Pawn(None, team= bool(y // 4)))
-            # Nobility Row
-            elif y in [0,7]:
-                team = bool(y // 4)
-                # Rooks
-                if x in [0,7]:
-                    create_cell(pos, x, y, pieces.Rook(None, team= team))
-                # Knights
-                if x in [1,6]:
-                    create_cell(pos, x, y, pieces.Knight(None, team= team))
-                # Bishops
-                if x in [2,5]:
-                    create_cell(pos, x, y, pieces.Bishop(None, team= team))
-                # Queen
-                if x == 3:
-                    create_cell(pos, x, y, pieces.Queen(None, team= team))
-                # King
-                if x == 4:
-                    global kings
-                    kings[team] = create_cell(pos, x, y, pieces.King(None, team= team)).piece
-            else:
-                create_cell(pos, x, y)
-
 def draw(surface: pygame.Surface):
     global cells
     for cell in cells.values():
@@ -166,15 +141,18 @@ history = ""
 
 def add_history(prev:tuple, next:tuple):
     history.join(f"{prev[0]}{prev[1]}{next[0]}{next[1]}")
+
 def remove_history():
     if history:
         history = history[:-4]
-def previous_move() -> dict:
+
+def previous_move() -> tuple[int:int]:
     if history:
         return {
             (int(history[-2]), int(history[-1]))
         }
     else:
-        return None
+        return (-1, -1)
+    
 def past_move(pos:tuple[int:int]):
     return f"{pos[0]}{pos[1]}" in history

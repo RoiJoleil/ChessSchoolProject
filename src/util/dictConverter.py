@@ -1,4 +1,4 @@
-from src.chess.board import Board
+from src.chess import board
 from src.chess import cell
 
 class GameConverter:
@@ -17,11 +17,11 @@ class GameConverter:
         
     def construct_save_data():
         result = {
-            "current_turn" : Board.get_current_turn(),
+            "current_turn" : board.get_player_turn(),
             "board" : GameConverter.Board_to_HexString()
         }
         return result
     
     def load_save_data(data:dict):
         GameConverter.HexString_to_Board(data["board"])
-        Board.set_current_turn(data["current_turn"])
+        board.set_player_turn(data["current_turn"])
