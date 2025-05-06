@@ -123,12 +123,12 @@ def draw(surface: pygame.Surface):
 
 def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
+    global en_passante
+
     to.piece = frm.piece
     to.piece.move(to.grid_pos[0], to.grid_pos[1])
     frm.piece = None
-    global en_passante
     en_passante.reset()
-
 
 def is_occupied(cell: Cell = None, x: int = None, y: int = None) -> bool:
     """

@@ -25,26 +25,8 @@ class Board:
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
-        # Create Cells
-        for x in range(8):
-            for y in range(8):
-                pos = (x * cell.CELL_SIZE, y * cell.CELL_SIZE)
-                cell.create_cell(pos, x, y)
-        
-        piece_row = pieces.get_piece_row()
-        pawn_row = pieces.get_pawn_row()
-        for x in range(8):
-            # get each Row which will contain pieces
-            cell_black_piece = cell.cells[(x, 0)]
-#            cell_black_pawn = cell.cells[(x, 1)]
-#            cell_white_pawn = cell.cells[(x, 6)]
-            cell_white_piece = cell.cells[(x, 7)]
-            # place pieces
-            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
-#            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
-#            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
-            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
-        
+        set_board_position()
+
         self.white_king = self.get_cell(4,0).piece
         self.black_king = self.get_cell(4,7).piece
 
@@ -63,11 +45,6 @@ class Board:
         This method updates the necessary positions of the pieces involved.
         This method makes no validation checks if the move is actually valid.
         """
-
-        # I dont know what is going on here, but its to much.
-        # Having 100 lines of code for a single function is way to much.
-        # All the seperate pieces in this function have to be seperated into their own function with descriptives
-        # Names so its easier understandable what is actually going on. - Joel
 
         if frm.piece == None:
             return
@@ -158,7 +135,6 @@ class Board:
                     self.select_cell(clicked_cell)
                     cell.set_focus([self.selected_cell], "selected")
                     
-
     def draw(self):
         """Draw the individual chessboard cells"""
         cell.draw(self.screen)
@@ -166,3 +142,28 @@ class Board:
     def __repr__(self):
         """NotImplemented"""
         pass
+
+# API
+def set_board_position():
+        # Create Cells
+    for x in range(8):
+        for y in range(8):
+            pos = (x * CELL_SIZE, y * CELL_SIZE)
+            cell.create_cell(pos, x, y)
+    
+    piece_row = pieces.get_piece_row()
+    pawn_row = pieces.get_pawn_row()
+    for x in range(8):
+        # get each Row which will contain pieces
+        cell_black_piece = cell.cells[(x, 0)]
+        cell_black_pawn = cell.cells[(x, 1)]
+        cell_white_pawn = cell.cells[(x, 6)]
+        cell_white_piece = cell.cells[(x, 7)]
+        # place pieces
+        cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
+        cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
+        cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
+        cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
+
+def load_board_position():
+    pass
