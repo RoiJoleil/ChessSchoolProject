@@ -1,7 +1,7 @@
 """This file contains the main loop while the application is running"""
 import pygame
-from src.settings import SCREEN_SIZE, CHESS_SURFACE_POSITION, CHESS_SURFACE_SIZE, FPS
-from src.chess.board import Board
+from src.settings import SCREEN_SIZE, FPS
+from src.chess import board
 from src import pngHandler
 from src.util.filemanager import Filemanager
 from src.util.filemanager import GameConverter
@@ -11,22 +11,20 @@ pygame.display.set_caption('Chess')
 screen = pygame.display.set_mode(SCREEN_SIZE)
 clock = pygame.time.Clock()
 pngHandler.init()
+board.init(screen)
 
-chess_board_rect = pygame.rect.Rect(CHESS_SURFACE_POSITION[0], CHESS_SURFACE_POSITION[1], CHESS_SURFACE_SIZE[0], CHESS_SURFACE_SIZE[1])
-chess_board_surface = screen.subsurface(chess_board_rect)
-chess_board = Board(chess_board_surface)
 running = True
 
 def _event(event):
-    global chess_board
-    chess_board.event(event)
+    board.event(event)
 
 def _draw():
-    global chess_board
-    chess_board.draw()
+    board.draw()
 
 def run():
     global running, screen, clock
+    board.start_game()
+    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

@@ -3,7 +3,6 @@ import random
 from src import pngHandler
 from typing import TYPE_CHECKING, Dict, Optional, List
 from src.settings import CELL_SIZE
-
 from src.chess import pieces
 
 class En_Passante:
@@ -92,6 +91,7 @@ def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = Non
         cell.piece.cell = cell
     cells[cell.grid_pos] = cell
     return cell
+
 def get_cell(x: int, y: int) -> Cell:
     global cells
     return cells.get((x, y), None)
@@ -126,7 +126,7 @@ def clear_board():
     global cells
     cells.clear()
 
-def init_standard_board():
+def set_start_position():
     for x in range(8):
         for y in range(8):
             pos = (x * CELL_SIZE, y * CELL_SIZE)
@@ -162,15 +162,5 @@ def draw(surface: pygame.Surface):
 
 def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
-    global en_passante
-
     to.piece = frm.piece
     to.piece.move(to.grid_pos[0], to.grid_pos[1])
-    if isinstance(to.piece, pieces.Rook):
-        global kings
-        kings[to.piece.team].remove_castling(frm.grid_pos)
-    global en_passante
-    if en_passante.active > 1:
-        en_passante.reset()
-    elif en_passante.active == 1:
-        en_passante.active += 1

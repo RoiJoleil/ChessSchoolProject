@@ -49,7 +49,6 @@ class Piece:
         self.cell = cell.get_cell(x, y)
         self.cell.piece = self
 
-        
     def draw(self, surface: pygame.Surface):
         surface.blit(self.piece, (self.cell.rect.x, self.cell.rect.y))
 
@@ -169,8 +168,7 @@ class Rook(Piece):
     
     def is_valid_move(self, dest, ignore=None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
-            return False        
-        global sign_of_number
+            return False
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
@@ -448,7 +446,6 @@ class King(Piece):
         else:
             super().move(x, y)
         self.remove_castling()
-
 
 #
 #   functions in the global space of pieces
