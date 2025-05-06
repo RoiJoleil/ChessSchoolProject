@@ -82,7 +82,6 @@ class Cell:
         return f"{header}\n{positional_info}\n{gameplay_info}\n"
 
 cells: Dict[tuple, Cell] = {} # {tuple: Cell}
-
 # API
 def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = None):
     cell = Cell(pos, grid_x, grid_y)
@@ -164,3 +163,20 @@ def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
     to.piece = frm.piece
     to.piece.move(to.grid_pos[0], to.grid_pos[1])
+
+
+# History of previous moves inspired by numeric
+history = ""
+
+def add_history(prev:tuple, next:tuple):
+    history.join(f"{prev[0]}{prev[1]}{next[0]}{next[1]}")
+def remove_history():
+    if history:
+        history = history[:-4]
+def previous_move() -> tuple[int:int]:
+    if history:
+        return (int(history[-2]), int(history[-1]))
+    else:
+        return (-1, -1)
+def past_move(pos:tuple[int:int]):
+    return f"{pos[0]}{pos[1]}" in history

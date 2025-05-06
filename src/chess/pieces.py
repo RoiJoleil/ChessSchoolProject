@@ -36,6 +36,7 @@ class Piece:
         self.cell = cell
         self.team = team # True = White, False = Black
         self.identity = 0
+        self.has_moved = False
         self.piece = None
 
         # Gameplay Information
@@ -48,6 +49,8 @@ class Piece:
         self.cell.piece = None
         self.cell = cell.get_cell(x, y)
         self.cell.piece = self
+        if not self.has_moved:
+            self.has_moved = True
 
     def draw(self, surface: pygame.Surface):
         surface.blit(self.piece, (self.cell.rect.x, self.cell.rect.y))
@@ -107,6 +110,8 @@ class Pawn(Piece):
     
     def is_valid_move(self, dest, ignore=None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
+            if (dest.grid_pos[0] != self.cell.grid_pos[0]):
+                return False
             if self.team:
                 if(dest.grid_pos[1] == 4):
                     return (
@@ -184,6 +189,9 @@ class Rook(Piece):
             if temp.piece is not None and temp != ignore:
                 return False
         return False
+    def move(self, x, y):
+        cell.kings[self.team].remove_castling(self.cell.grid_pos)
+        super().move(x, y)
     
     def get_valid_moves(self):
         result = []
@@ -199,7 +207,8 @@ class Rook(Piece):
                 if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
                     break
                 result.append(temp)
-                temp = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + i)
+                temp = cell.get_cell(temp.grid_pos[0], temp.grid_pos[1] + i)
+        return result
 
 class Knight(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
@@ -226,16 +235,25 @@ class Knight(Piece):
         result = []
         for i in [-1, 1]:
             for j in [-2, 2]:
-                temp = (self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
+                # 1 2
+                temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
                 if temp == None:
                     continue
-                if self.cell.piece.is_valid_position(self.cell.grid_pos, temp):
+                if self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     result.append(temp)
-                temp = (self.cell.grid_pos[0] + j, self.cell.grid_pos[1] + i)
+                # 2 1
+                temp = cell.get_cell(self.cell.grid_pos[0] + j, self.cell.grid_pos[1] + i)
                 if temp == None:
                     continue
-                if self.is_valid_position(self.cell.grid_pos, temp):
+                if self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     result.append(temp)
+        return result
+    def move(self, x, y):
+        if cell.en_passante.active > 1:
+            cell.en_passante.reset()
+        elif cell.en_passante.active == 1:
+            cell.en_passante.active += 1
+        super().move(x, y)
     
 class Bishop(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
@@ -281,10 +299,10 @@ class Bishop(Piece):
             for j in [-1, 1]:
                 temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
                 while temp:
-                    if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                    if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                         break
                     result.append(temp)
-                    temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
+                    temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1] + j)
         return result
 
 class Queen(Piece):
@@ -305,7 +323,7 @@ class Queen(Piece):
                 return False
         if abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 0:
             return False
-        return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
+        return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
     def is_valid_move(self, dest, ignore = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
@@ -329,8 +347,8 @@ class Queen(Piece):
     
     def get_valid_moves(self):
         result = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
                 if i == 0 and j == 0:
                     continue
                 temp = cell.get_cell(self.cell.grid_pos[0] + i,self.cell.grid_pos[1] + j)
@@ -338,7 +356,8 @@ class Queen(Piece):
                     if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                         break
                     result.append(temp)
-                    temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
+                    temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1] + j)
+        return result
 
 class King(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
@@ -385,8 +404,8 @@ class King(Piece):
         
     def get_valid_moves(self):
         result = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
                 temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
                 if not temp:
                     continue
