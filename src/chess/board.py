@@ -16,37 +16,15 @@ class Board:
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
 
-        self.white_king = None
-        self.black_king = None
         self._initialise_cells()
 
-        self.selected_cell = None
-        self.players_turn = None
+        self.selected_cell:cell.Cell = None
+        self.players_turn:bool = True
 
     def _initialise_cells(self):
         """Creates all the cells and rects upon first initialisation."""
         # Create Cells
-        for x in range(8):
-            for y in range(8):
-                pos = (x * cell.CELL_SIZE, y * cell.CELL_SIZE)
-                cell.create_cell(pos, x, y)
-        
-        piece_row = pieces.get_piece_row()
-        pawn_row = pieces.get_pawn_row()
-        for x in range(8):
-            # get each Row which will contain pieces
-            cell_black_piece = cell.cells[(x, 0)]
-#            cell_black_pawn = cell.cells[(x, 1)]
-#            cell_white_pawn = cell.cells[(x, 6)]
-            cell_white_piece = cell.cells[(x, 7)]
-            # place pieces
-            cell_black_piece.set_piece(piece_row[x](cell=cell_black_piece, team=False))
-#            cell_black_pawn.set_piece(pawn_row[x](cell=cell_black_pawn, team=False))
-#            cell_white_pawn.set_piece(pawn_row[x](cell=cell_white_pawn, team=True))
-            cell_white_piece.set_piece(piece_row[x](cell=cell_white_piece, team=True))
-        
-        self.white_king = self.get_cell(4,0).piece
-        self.black_king = self.get_cell(4,7).piece
+        cell.init_standard_board()
 
     def get_current_turn() -> bool:
         global current_turn
@@ -107,9 +85,10 @@ class Board:
         """
         return cell.get_cell(x, y)
 
-    def select_cell(self, cell:cell.Cell):
+    def select_cell(self, selected:cell.Cell):
         """Selects a cell to do actions with. 'None' is also a valid argument."""
-        self.selected_cell = cell
+        self.selected_cell = selected
+            
 
     def event(self, event: pygame.event.Event):
         """Handle Click Events from the user"""
@@ -132,6 +111,7 @@ class Board:
                 elif clicked_cell.piece:
                     self.select_cell(clicked_cell)
                     cell.set_focus([self.selected_cell], "selected")
+                    cell.set_focus(clicked_cell.piece.get_valid_moves(), "prev")
                     
 
     def draw(self):

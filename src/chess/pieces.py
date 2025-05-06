@@ -25,6 +25,12 @@ def sign_of_number(nmb:int) -> int:
         return 0
     return 1 if nmb > 0 else -1
 
+def out_of_bounds(pos:tuple[int,int]):
+    return (
+        pos[0] < 0 or pos[0] >= 8 or
+        pos[1] < 0 or pos[1] >= 8
+    )
+
 class Piece:
     def __init__(self, cell: "cell.Cell", team: bool):
         # Positional Information
@@ -34,23 +40,19 @@ class Piece:
         self.piece = None
 
         # Gameplay Information
-        self.rect = pygame.rect.Rect(self.cell.rect.x, self.cell.rect.y, PIECE_SIZE, PIECE_SIZE)
         self._set_styling()
 
     def _set_styling(self):
         raise NotImplementedError()
     
     def move(self, x: int, y: int):
+        self.cell.piece = None
         self.cell = cell.get_cell(x, y)
-        self.set_position(self.cell.rect.x, self.cell.rect.y)
+        self.cell.piece = self
 
-
-    def set_position(self, x: int, y: int):
-        self.rect.x = x
-        self.rect.y = y
-    
+        
     def draw(self, surface: pygame.Surface):
-        surface.blit(self.piece, (self.rect.x, self.rect.y))
+        surface.blit(self.piece, (self.cell.rect.x, self.cell.rect.y))
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
@@ -65,9 +67,9 @@ class Piece:
             dest(tuple): destination position of the Piece
             pieceInHex(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
         """
-        raise NotImplementedError()
+        raise not NotImplementedError
     
-    def is_valid_move(self, dest : "cell.Cell", ignore) -> bool:
+    def is_valid_move(self, dest : "cell.Cell", ignore:"cell.Cell") -> bool:
         raise not NotImplementedError
     
     def get_valid_moves(self) -> List["cell.Cell"]:
@@ -83,20 +85,26 @@ class Pawn(Piece):
         self.piece = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr:tuple, dest:tuple) -> bool:
+        if out_of_bounds(curr) or out_of_bounds(dest):
+            return False
         # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
         # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
         if dest[1] - curr[1] != (-1 if self.team else 1):
             return False
-        temp = cell.get_cell(dest[0], dest[1])
         # if the movement is vertical the Cell must be empty
-        if temp.piece == None:
-            return curr[0] == dest[0]
+        if curr[0] == dest[0]:
+            return cell.get_cell(dest[0], dest[1]).piece == None
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
             if cell.en_passante.active:
-                return cell.en_passante.team != self.team
+                if cell.en_passante.checkPos == dest:
+                    return cell.en_passante.team != self.team
             else:
-                return self.team != temp.piece.team
+                temp = cell.get_cell(dest[0], dest[1])
+                if temp.piece != None:
+                    return self.team != temp.piece.team
+                else:
+                    return False
         return False
     
     def is_valid_move(self, dest, ignore=None):
@@ -132,9 +140,16 @@ class Pawn(Piece):
         if dest:
             if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
                 result.append(dest)
+        return result
+
     def move(self, x, y):
-        cell.en_passante.set((x, y), self.team)
+        if abs(y - self.cell.grid_pos[1]) == 2:
+            cell.en_passante.set((x, y), self.team)
+        elif cell.en_passante.checkPos == (x, y):
+            cell.get_cell(cell.en_passante.piecePos[0], cell.en_passante.piecePos[1]).piece = None
+            cell.en_passante.reset()
         super().move(x, y)
+
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
@@ -145,9 +160,9 @@ class Rook(Piece):
         self.piece = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
-        temp = cell.get_cell(dest[0], dest[1])
-        if not temp:
+        if out_of_bounds(curr) or out_of_bounds(dest):
             return False
+        temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
             if temp.piece.team == self.team:
                 return False
@@ -169,7 +184,7 @@ class Rook(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None:
+            if temp.piece is not None and temp != ignore:
                 return False
         return False
     
@@ -199,11 +214,13 @@ class Knight(Piece):
         self.piece = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
+        if out_of_bounds(curr) or out_of_bounds(dest):
+            return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
             if temp.piece.team == self.team:
                 return False
-        return pow(dest[0] - curr[0], 2) + pow(dest[1] - curr[1], 2) == 5
+        return (dest[0] - curr[0]) ** 2 + (dest[1] - curr[1]) ** 2 == 5
     
     def is_valid_move(self, dest, ignore=None):
         return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
@@ -212,15 +229,15 @@ class Knight(Piece):
         result = []
         for i in [-1, 1]:
             for j in [-2, 2]:
-                temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
+                temp = (self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
                 if temp == None:
                     continue
-                if self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                if self.cell.piece.is_valid_position(self.cell.grid_pos, temp):
                     result.append(temp)
-                temp = cell.get_cell(self.cell.grid_pos[0] + j, self.cell.grid_pos[1] + i)
+                temp = (self.cell.grid_pos[0] + j, self.cell.grid_pos[1] + i)
                 if temp == None:
                     continue
-                if self.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                if self.is_valid_position(self.cell.grid_pos, temp):
                     result.append(temp)
     
 class Bishop(Piece):
@@ -233,6 +250,8 @@ class Bishop(Piece):
         self.piece = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
+        if out_of_bounds(curr) or out_of_bounds(dest):
+            return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
             if temp.piece.team == self.team:
@@ -255,7 +274,7 @@ class Bishop(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None:
+            if temp.piece is not None and temp is not ignore:
                 return False
         return False
     
@@ -281,6 +300,8 @@ class Queen(Piece):
         self.piece = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
+        if out_of_bounds(curr) or out_of_bounds(dest):
+            return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
             if temp.piece.team == self.team:
@@ -289,7 +310,7 @@ class Queen(Piece):
             return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False        
         global sign_of_number
@@ -305,7 +326,7 @@ class Queen(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None and temp.piece != ignore.piece:
+            if temp.piece is not None and temp is not ignore:
                 return False
         return False
     
@@ -317,7 +338,7 @@ class Queen(Piece):
                     continue
                 temp = cell.get_cell(self.cell.grid_pos[0] + i,self.cell.grid_pos[1] + j)
                 while temp:
-                    if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                    if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                         break
                     result.append(temp)
                     temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
@@ -326,17 +347,15 @@ class King(Piece):
     def __init__(self, cell: "cell.Cell", team: bool):
         super().__init__(cell, team)
         self.identity = 6 + 8 * self.team
-        self.castling = {(2,0),(6,0)} if self.team else {(2,7),(6,7)}
+        self.castling = {(2,7),(6,7)} if self.team else {(2,0),(6,0)}
 
     def _set_styling(self):
         name = "white-king" if self.team else "black-king"
         self.piece = pngHandler.get_pygame_image(name)
 
-    def in_check(self, check:"cell.Cell" = None) -> bool:
-        if not check:
-            check = self.cell
+    def in_check(self, check:"cell.Cell") -> bool:
         for x in range(0, 8):
-            for y in range(0,8):
+            for y in range(0, 8):
                 threat = cell.get_cell(x, y)
                 if threat and threat.piece and threat.piece.team != self.team:
                     if (threat.piece.is_valid_move(check, self.cell)):
@@ -344,6 +363,8 @@ class King(Piece):
         return False
 
     def is_valid_position(self, curr, dest) -> bool:
+        if out_of_bounds(curr) or out_of_bounds(dest):
+            return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
             if temp.piece.team == self.team:
@@ -351,16 +372,17 @@ class King(Piece):
         return 0 < (curr[0] - dest[0]) ** 2 + (curr[1] - dest[1]) ** 2 <= 2
     
     def is_valid_move(self, dest, ignore=None):
-        if dest in self.castling:
-            if dest.grid_pos[1] - self.cell.grid_pos[1] == 2:
-
+        if self.is_castling(dest.grid_pos):
+            if abs(dest.grid_pos[0] - self.cell.grid_pos[0]) == 2:
                 x_mod = sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0])
                 y_mod = sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1])
+                mid_way = cell.get_cell(self.cell.grid_pos[0] + x_mod, self.cell.grid_pos[1] + y_mod)
                 if (
-                    self.is_valid_position(self.cell.grid_pos, (self.cell.grid_pos[0] + x_mod, self.cell.grid_pos[1] + y_mod)) and
-                    self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
+                    mid_way.piece == None and
+                    dest.piece == None
                 ):
-                    return not (self.in_check(cell.get_cell) or self.in_check(dest))
+                    return not (self.in_check(cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[0])) or self.in_check(dest))
+
         if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return not self.in_check(dest)
         
@@ -377,22 +399,62 @@ class King(Piece):
             for i in self.castling:
                 result.append(cell.get_cell(i[0], i[1]))
         return result
-    
+
+    def is_castling(self, dest:tuple[int, int]) -> bool:
+        """ Checks rather or not if the move with the given poisition would result in castling"""
+        if self.castling == None:
+            return False
+        return dest in self.castling
+
     def castling_kingside(self):
         if self.team:
-            cell.move_piece(self.cell, cell.get_cell(6,7))
-            cell.move_piece(cell.get_cell(7, 7),cell.get_cell(5,7))
+            super().move(6,7)
+            cell.get_cell(7, 7).piece.move(5,7)
         else:
-            cell.move_piece(self.cell, cell.get_cell(6, 0))
-            cell.move_piece(cell.get_cell(7, 0),cell.get_cell(5, 0))
+            super().move(6, 0)
+            cell.get_cell(7, 0).piece.move(5, 0)
     
     def castling_queenside(self):
         if self.team:
-            cell.move_piece(self.cell, cell.get_cell(2,7))
-            cell.move_piece(cell.get_cell(0, 7),cell.get_cell(3,7))
+            super().move(2, 7)
+            cell.get_cell(0, 7).piece.move(3,7)
         else:
-            cell.move_piece(self.cell, cell.get_cell(2, 0))
-            cell.move_piece(cell.get_cell(0, 0),cell.get_cell(3, 0))
+            super().move(2, 0)
+            cell.get_cell(0, 0).piece.move(3, 0)
+    
+    def remove_castling(self, toRemove:tuple[int, int] = None):
+        if self.castling == None:
+            return
+        elif toRemove == None:
+            self.castling = None
+            return
+        elif toRemove[0] == 0:
+            try:
+                self.castling.remove((2,toRemove[1]))
+            except:
+                pass
+        elif toRemove[0] == 7:
+            try:
+                self.castling.remove((6,toRemove[1]))
+            except:
+                pass
+
+    def move(self, x, y):
+        if self.is_castling((x, y)):
+            if x < self.cell.grid_pos[0]:
+                self.castling_queenside()
+            else:
+                self.castling_kingside()
+            
+        else:
+            super().move(x, y)
+        self.remove_castling()
+
+
+#
+#   functions in the global space of pieces
+#
+# Get a Row full of Pawns
 def get_pawn_row() -> List[Piece]:
     """Return a list of pawns."""
     return [Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn]
