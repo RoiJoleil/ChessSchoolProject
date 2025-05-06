@@ -1,7 +1,8 @@
 import pygame
 from typing import List, Dict
 from src.settings import CELL_SIZE
-from src.settings import SCREEN_SIZE, CHESS_SURFACE_POSITION, CHESS_SURFACE_SIZE, FPS
+from src.settings import CHESS_SURFACE_POSITION, CHESS_SURFACE_SIZE
+from src.chess.globals import ChessPieces, ChessTeam
 from src.chess import cell, pieces
 from src.chess import pieces
 
@@ -64,7 +65,7 @@ def conclude_game():
 def start_game():
     """Starts a new Game"""
     global game_started
-    cell.set_start_position()
+    set_start_position()
     game_started = True
 
 def load_game():
@@ -115,6 +116,38 @@ def set_valid_target_cells(cells: List[cell.Cell]):
     valid_target_cells = cells
     cell.set_focus(valid_target_cells, "move")
         
+def set_start_position():
+    """
+    Sets the default start position.
+    Should be updated to take a file to build the start position if loading functionality is added.
+    """
+    for x in range(8):
+        for y in range(8):
+            pos = (x * CELL_SIZE, y * CELL_SIZE)
+            team = ChessTeam.WHITE if bool(y // 4) else ChessTeam.BLACK
+            # Pawn Rows
+            if y in [1,6]:
+                cell.create_cell(pos, x, y, pieces.Pawn(None, team=team, piece=ChessPieces.PAWN))
+            # Nobility Row
+            elif y in [0,7]:
+                # Rooks
+                if x in [0,7]:
+                    cell.create_cell(pos, x, y, pieces.Rook(None, team=team, piece=ChessPieces.ROOK))
+                # Knights
+                if x in [1,6]:
+                    cell.create_cell(pos, x, y, pieces.Knight(None, team=team, piece=ChessPieces.KNIGHT))
+                # Bishops
+                if x in [2,5]:
+                    cell.create_cell(pos, x, y, pieces.Bishop(None, team=team, piece=ChessPieces.BISHOP))
+                # Queen
+                if x == 3:
+                    cell.create_cell(pos, x, y, pieces.Queen(None, team=team, piece=ChessPieces.QUEEN))
+                # King
+                if x == 4:
+                    cell.kings[team] = cell.create_cell(pos, x, y, pieces.King(None, team=team, piece=ChessPieces.KING)).piece
+            else:
+                cell.create_cell(pos, x, y)
+
 def event(event: pygame.event.Event):
     """Handle Click Events from the user"""
     global game_started

@@ -124,36 +124,6 @@ def clear_board():
     """For restarting a game."""
     global cells
     cells.clear()
-
-def set_start_position():
-    for x in range(8):
-        for y in range(8):
-            pos = (x * CELL_SIZE, y * CELL_SIZE)
-            # Pawn Rows
-            if y in [1,6]:
-                create_cell(pos, x, y, pieces.Pawn(None, team= bool(y // 4)))
-            # Nobility Row
-            elif y in [0,7]:
-                team = bool(y // 4)
-                # Rooks
-                if x in [0,7]:
-                    create_cell(pos, x, y, pieces.Rook(None, team= team))
-                # Knights
-                if x in [1,6]:
-                    create_cell(pos, x, y, pieces.Knight(None, team= team))
-                # Bishops
-                if x in [2,5]:
-                    create_cell(pos, x, y, pieces.Bishop(None, team= team))
-                # Queen
-                if x == 3:
-                    create_cell(pos, x, y, pieces.Queen(None, team= team))
-                # King
-                if x == 4:
-                    global kings
-                    kings[team] = create_cell(pos, x, y, pieces.King(None, team= team)).piece
-            else:
-                create_cell(pos, x, y)
-
 def draw(surface: pygame.Surface):
     global cells
     for cell in cells.values():
