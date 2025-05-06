@@ -170,13 +170,16 @@ history = ""
 
 def add_history(prev:tuple, next:tuple):
     history.join(f"{prev[0]}{prev[1]}{next[0]}{next[1]}")
+
 def remove_history():
     if history:
         history = history[:-4]
+
 def previous_move() -> tuple[int:int]:
     if history:
         return (int(history[-2]), int(history[-1]))
     else:
         return (-1, -1)
+    
 def past_move(pos:tuple[int:int]):
     return f"{pos[0]}{pos[1]}" in history

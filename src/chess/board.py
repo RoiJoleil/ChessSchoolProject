@@ -7,9 +7,10 @@ from src.chess import pieces
 
 board_rect = None
 board_surface =  None
-selected_cell = None
 player_turn = None
 game_started = None
+selected_cell = None
+valid_target_cells = []
 
 def init(screen: pygame.Surface):
     global board_rect, board_surface, player_turn, game_started
@@ -98,10 +99,21 @@ def get_cell(x: int, y: int) ->cell.Cell:
     """
     return cell.get_cell(x, y)
 
-def select_cell(selected:cell.Cell):
+def select_cell(selected: cell.Cell):
     """Selects a cell to do actions with. 'None' is also a valid argument."""
     global selected_cell
     selected_cell = selected
+
+def reset_valid_target_cells():
+    global valid_target_cells
+    cell.set_focus(valid_target_cells, None)
+    valid_target_cells = None
+
+def set_valid_target_cells(cells: List[cell.Cell]):
+    """This function handles the highlight of valid target cells"""
+    global valid_target_cells
+    valid_target_cells = cells
+    cell.set_focus(valid_target_cells, "move")
         
 def event(event: pygame.event.Event):
     """Handle Click Events from the user"""
@@ -119,17 +131,19 @@ def event(event: pygame.event.Event):
             # deselect cell by clicking on it again.
             if selected_cell == clicked_cell:
                 cell.set_focus([selected_cell], None)
+                reset_valid_target_cells()
                 select_cell(None)
             # move piece if we have a cell selected.
             elif selected_cell:
                 make_move(selected_cell, clicked_cell)
                 cell.set_focus([selected_cell], None)
+                reset_valid_target_cells()
                 select_cell(None)
             # select a cell if the clicked cell has a piece.
             elif clicked_cell.piece:
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
-                cell.set_focus(clicked_cell.piece.get_valid_moves(), "move")
+                set_valid_target_cells(clicked_cell.piece.get_valid_moves())
                 
 def draw():
     """Draw the individual chessboard cells"""

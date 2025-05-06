@@ -189,6 +189,7 @@ class Rook(Piece):
             if temp.piece is not None and temp != ignore:
                 return False
         return False
+    
     def move(self, x, y):
         cell.kings[self.team].remove_castling(self.cell.grid_pos)
         super().move(x, y)
@@ -466,9 +467,6 @@ class King(Piece):
             super().move(x, y)
         self.remove_castling()
 
-#
-#   functions in the global space of pieces
-#
 # Get a Row full of Pawns
 def get_pawn_row() -> List[Piece]:
     """Return a list of pawns."""
