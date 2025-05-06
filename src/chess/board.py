@@ -55,8 +55,9 @@ class Board:
     def set_current_turn(turn:bool):
         global current_turn
         # This Function does nothing ??? - Joel
-        current_turn = turn
-    
+        if turn:
+            current_turn = turn
+
     def make_move(self, frm:cell.Cell, to:cell.Cell):
         """
         This method updates the necessary positions of the pieces involved.
@@ -93,6 +94,30 @@ class Board:
                 result[temp.grid_pos] = temp.piece.get_valid_moves()
         return result
     
+    def is_valid_move(self, curr:cell.Cell, dest:cell.Cell) -> bool:
+        """Check to make sure an attempted move is valid."""
+        if isinstance(curr.piece,(pieces.Pawn, pieces.Knight)):
+            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0)
+        
+        if isinstance(curr.piece, pieces.King):
+            if self.in_check(dest, curr.piece.team):
+                return False
+            if dest.grid_pos in curr.piece.castling:
+                return True
+            return curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.team if dest.piece else 0)
+            
+        elif curr.piece:
+            if not curr.piece.is_valid_position(curr.grid_pos, dest.grid_pos, dest.piece.identity if dest.piece else 0):
+                return False
+            diff = (self.signOfNumber(dest.grid_pos[0] - curr.grid_pos[0]), self.signOfNumber(dest.grid_pos[1] - curr.grid_pos[1]))
+            for i in range(1,8):
+                if (curr.grid_pos[0] + diff[0] * i == dest.grid_pos[0]) and (curr.grid_pos[1] + diff[1] * i == dest.grid_pos[1]) :
+                    return True
+                if self.get_cell(curr.grid_pos[0] + diff[0] * i, curr.grid_pos[1] + diff[1] * i).piece != None:
+                    return False
+        else:
+            return False
+
     def convert_abs_coords_to_grid_coords(self, pos: tuple) -> tuple:
         """
         Turns the screen coordinates into grid coordinates.

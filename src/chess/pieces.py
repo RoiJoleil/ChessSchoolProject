@@ -2,7 +2,6 @@ import pygame
 from src import pngHandler
 from typing import List, TYPE_CHECKING
 from src.settings import PIECE_SIZE
-
 from src.chess import cell
 
 chessPieces = {
