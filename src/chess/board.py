@@ -12,6 +12,7 @@ player_turn = None
 game_started = None
 selected_cell = None
 valid_target_cells = []
+last_move_cells = []
 
 def init(screen: pygame.Surface):
     global board_rect, board_surface, player_turn, game_started
@@ -20,31 +21,36 @@ def init(screen: pygame.Surface):
     board_surface = screen.subsurface(board_rect)
     game_started = False
 
-def make_move(frm: cell.Cell, to: cell.Cell):
+def make_move(frm: cell.Cell, to: cell.Cell) -> bool:
     """
     This method updates the necessary positions of the pieces involved.
     This method makes no validation checks if the move is actually valid.
+
+    Returns:
+        A boolean value if the move was made.
     """
     global player_turn
 
     # Return if frm has no Piece
     if frm.piece == None:
         print(f"{__name__}: make_move failed as 'frm' has no Piece.")
-        return
+        return False
     
     # Return if its not our Turn
     if frm.piece.team != player_turn:
         print(f"{__name__}: make_move failed as its not '{player_turn}' Turn.")
-        return
+        pass
+        #return False
     
     # Return if its not a valid move
     if not frm.piece.is_valid_move(to):
         print(f"{__name__}: make_move failed as the attempted move is Invalid.")
-        return
+        return False
     
     # Move is successful and being made.
     cell.move_piece(frm=frm, to=to)
     toggle_player_turn()
+    return True
 
 def toggle_player_turn():
     global player_turn
@@ -105,9 +111,15 @@ def select_cell(selected: cell.Cell):
     global selected_cell
     selected_cell = selected
 
+def set_last_move_cells(cells: List[cell.Cell]):
+    global last_move_cells
+    cell.unfocus(last_move_cells, "prev")
+    last_move_cells = cells
+    cell.set_focus(last_move_cells, "prev")
+
 def reset_valid_target_cells():
     global valid_target_cells
-    cell.set_focus(valid_target_cells, None)
+    cell.unfocus(valid_target_cells, "move")
     valid_target_cells = None
 
 def set_valid_target_cells(cells: List[cell.Cell]):
@@ -163,14 +175,15 @@ def event(event: pygame.event.Event):
             clicked_cell = get_cell(x, y)
             # deselect cell by clicking on it again.
             if selected_cell == clicked_cell:
-                cell.set_focus([selected_cell], None)
+                cell.unfocus([selected_cell], "selected")
                 reset_valid_target_cells()
                 select_cell(None)
             # move piece if we have a cell selected.
             elif selected_cell:
-                make_move(selected_cell, clicked_cell)
-                cell.set_focus([selected_cell], None)
+                cell.unfocus([selected_cell], "selected")
                 reset_valid_target_cells()
+                if make_move(selected_cell, clicked_cell):
+                    set_last_move_cells([selected_cell, clicked_cell])
                 select_cell(None)
             # select a cell if the clicked cell has a piece.
             elif clicked_cell.piece:
