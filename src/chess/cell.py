@@ -6,6 +6,7 @@ from src.settings import CELL_SIZE
 
 from src.chess import pieces
 
+
 class En_Passante:
     def __init__(self):
         self.checkPos = None
@@ -168,10 +169,12 @@ def add_history(prev:tuple, next:tuple):
 def remove_history():
     if history:
         history = history[:-4]
-def previous_move() -> tuple[int:int]:
+def previous_move() -> dict:
     if history:
-        return (int(history[-2]), int(history[-1]))
+        return {
+            (int(history[-2]), int(history[-1]))
+        }
     else:
-        return (-1, -1)
+        return None
 def past_move(pos:tuple[int:int]):
     return f"{pos[0]}{pos[1]}" in history

@@ -19,6 +19,16 @@ chessTeam = {
     "black": False,
     "white": True
 }
+en_passante_height = {
+    True: {
+        "check_y" : 5,
+        "piece_y" : 4
+    },
+    False:{
+        "check_y" : 2,
+        "piece_y" : 3
+    }
+}
 
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
@@ -99,6 +109,12 @@ class Pawn(Piece):
             return cell.get_cell(dest[0], dest[1]).piece == None
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
+            prev = cell.previous_move()
+            global en_passante_height
+            if prev[1] == en_passante_height[not self.team]["piece_y"]:
+                if (prev[0], en_passante_height[not self.team]["check_y"]) == dest:
+                    
+
             if cell.en_passante.active:
                 if cell.en_passante.checkPos == dest:
                     return cell.en_passante.team != self.team
@@ -135,13 +151,13 @@ class Pawn(Piece):
         # singular step forward
         result = []
         for i in range(-1, 2):
-            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (1 if self.team else -1))
+            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (-1 if self.team else 1))
             if dest == None:
                 continue
             if self.is_valid_move(dest):
                 result.append(dest)
         # double step forward
-        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2 *(1 if self.team else -1))
+        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2 *(-1 if self.team else 1))
         if dest:
             if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
                 result.append(dest)
@@ -201,13 +217,13 @@ class Rook(Piece):
         for i in [-1, 1]:
             temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1])
             while temp:
-                if not self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                if not self.cell.piece.is_valid_position(self.cell.grid_pos):
                     break
                 result.append(temp)
                 temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1])
             temp = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + i)
             while temp:
-                if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos, temp.piece.identity if temp.piece else 0):
+                if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     break
                 result.append(temp)
                 temp = cell.get_cell(temp.grid_pos[0], temp.grid_pos[1] + i)

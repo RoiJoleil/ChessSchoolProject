@@ -7,3 +7,10 @@ def convert_abs_coords_to_grid_coords(pos: tuple) -> tuple:
     """
     x, y = pos[0] // CELL_SIZE, pos[1] // CELL_SIZE
     return (x, y)
+
+class Move:
+    def __init__(self, prev:tuple[int,int], next:tuple[int,int]):
+        self.prev = prev
+        self.next = next
+    def __repr__(self):
+        return f"prev: {self.prev}\tnext: {self.next}"    
