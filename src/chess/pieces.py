@@ -4,6 +4,8 @@ from typing import List
 from src.chess.globals import ChessTeam, ChessPieces
 from src.chess import cell
 from src.chess.util import Move
+
+
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
         return 0
@@ -34,6 +36,7 @@ class Piece:
         raise NotImplementedError()
     
     def move(self, x: int, y: int):
+        cell.add_history(self.cell.grid_pos,(x, y))
         self.cell.piece = None
         self.cell = cell.get_cell(x, y)
         self.cell.piece = self
@@ -78,65 +81,78 @@ class Pawn(Piece):
     def is_valid_position(self, curr:tuple, dest:tuple) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
-        # if the piece is black the direction of the movement must be -1 ( 1 -2 * 1)
-        # else when the piece white the direction of movement must be 1 ( 1 - 2 * 0)
-        if dest[1] - curr[1] != (-1 if self.team_bool else 1):
+        
+        if (dest[1] - curr[1]) != (-1 if self.team_bool else 1):
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
             return cell.get_cell(dest[0], dest[1]).piece == None
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
-            if False:
-                if cell.en_passante.checkPos == dest:
-                    return cell.en_passante.team != self.team_bool
-            else:
-                temp = cell.get_cell(dest[0], dest[1])
-                if temp.piece != None:
-                    return self.team_bool != temp.piece.team
-                else:
-                    return False
+            temp = cell.get_cell(dest[0], dest[1])
+            if temp.piece != None:
+                return self.team_bool != temp.piece.team
+
         return False
     
+    def is_en_passante(self, dest:tuple[int,int]) -> bool:
+        last_move = cell.previous_move()
+        if last_move == None:
+            return False
+        pawn_cell = cell.get_cell(last_move.next[0], last_move.next[1])
+        if not isinstance(pawn_cell.piece, Pawn):
+            return False
+        # with the vector of the previous Move you should be able to construct the destination
+        diff_x = sign_of_number(last_move.next[0] - last_move.prev[0])
+        diff_y = sign_of_number(last_move.next[1] - last_move.prev[1])
+        to_check = cell.get_cell(last_move.prev[0] + diff_x, last_move.prev[1] + diff_y)
+        if to_check.grid_pos != dest:
+            return False
+            
+        return self.is_valid_position((self.cell.grid_pos[0], self.cell.grid_pos[1] + diff_y), pawn_cell.grid_pos)
+    
+
+
+
     def is_valid_move(self, dest, ignore=None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
+            if self.has_moved:
+                return False
             if (dest.grid_pos[0] != self.cell.grid_pos[0]):
                 return False
-            if self.team_bool:
-                if(dest.grid_pos[1] == 4):
-                    return (
-                        cell.get_cell(dest.grid_pos[0], 5).piece == None and
-                        cell.get_cell(dest.grid_pos[0], 4).piece == None
-                        )
-            else:
-                if(dest.grid_pos[1] == 3):
+            diff_y = sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1])
+            return (
+                cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + diff_y).piece == None and
+                cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + 2 * diff_y).piece == None
+                )
+        if self.is_en_passante(dest.grid_pos):
+            return True
 
-                    return (
-                        cell.get_cell(dest.grid_pos[0], 3).piece == None and
-                        cell.get_cell(dest.grid_pos[0], 2).piece == None
-                        )
-            return False
         
         return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
 
     def get_valid_moves(self):
         # singular step forward
         result = []
-        for i in range(-1, 2):
-            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (1 if self.team_bool else -1))
+        for i in [-1, 0, 1]:
+            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (-1 if self.team_bool else 1))
             if dest == None:
                 continue
             if self.is_valid_move(dest):
                 result.append(dest)
         # double step forward
-        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2 *(1 if self.team_bool else -1))
+        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2* (-1 if self.team_bool else 1))
         if dest:
-            if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
+            if self.is_valid_move(dest):
                 result.append(dest)
         return result
 
     def move(self, x, y):
+        if cell.get_cell(x, y).piece == None:
+            temp = cell.get_cell(x, self.cell.grid_pos[1])
+            temp.piece = None
         super().move(x, y)
+
 
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
@@ -408,7 +424,7 @@ class King(Piece):
             rook_pos = (7, self.cell.grid_pos[1])
         
         rook_cell = cell.get_cell(rook_pos[0], rook_pos[1])
-        
+
         if isinstance(rook_cell.piece, Rook):
             if rook_cell.piece.has_moved:
                 return False
@@ -431,6 +447,7 @@ class King(Piece):
             return True
         else:
             return False
+
     def castling_kingside(self):
         if self.team_bool:
             super().move(6,7)

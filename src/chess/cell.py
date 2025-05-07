@@ -105,18 +105,41 @@ def move_piece(frm: Cell, to: Cell):
 history = ""
 
 def add_history(prev:tuple, next:tuple, promotion:pieces.Piece = None):
-    history.join(f"{prev[0]}{prev[1]}{next[0]}{next[1]}")
+    global history
+    history = history + f"{prev[0]}{prev[1]}{next[0]}{next[1]}"
 
 def remove_history():
+    global history
     if history:
         history = history[:-4]
 
 def previous_move() -> Move:
+    global history
     if len(history) >= 4:
-        return Move((int(history[-4]), int(history[-3]))),(int(history[-2]), int(history[-1]))
+        return Move((int(history[-4]), int(history[-3])),(int(history[-2]), int(history[-1])))
     else:
         return None
+def prev_move_focus():
+    global previous_move
+    last_move = previous_move()
+    if last_move == None:
+        return
     
-def past_move(pos:tuple[int:int]):
+    
+
+def prev_move_unfocus():
+    global previous_move
+    last_move = previous_move()
+    if last_move == None:
+        return
+    
+
+def has_been_touched(pos:tuple[int:int]):
     """Check if given position is in the history"""
-    return f"{pos[0]}{pos[1]}" in history
+    global history
+    i = 0
+    while len(history[i:]) > 2:
+        if history[i + 0] == pos[0] and history[i + 1] == pos[1]:
+            return True
+        i += 2
+    return False

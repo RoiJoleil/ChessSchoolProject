@@ -33,7 +33,7 @@ def make_move(frm: cell.Cell, to: cell.Cell):
         return
     
     # Return if its not our Turn
-    if frm.piece.team != player_turn:
+    if False and (frm.piece.team != player_turn):
         print(f"{__name__}: make_move failed as its not '{player_turn}' Turn.")
         return
     
@@ -48,7 +48,7 @@ def make_move(frm: cell.Cell, to: cell.Cell):
 
 def toggle_player_turn():
     global player_turn
-    player_turn != player_turn
+    player_turn = not player_turn
 
 def set_player_turn(turn: bool):
     global player_turn
@@ -177,12 +177,18 @@ def event(event: pygame.event.Event):
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
                 set_valid_target_cells(clicked_cell.piece.get_valid_moves())
+            last_move = cell.previous_move()
+            if selected_cell == None:
+                if last_move:
+                    cell.set_focus([cell.get_cell(last_move.prev[0], last_move.prev[1]), cell.get_cell(last_move.next[0], last_move.next[1])], "prev")
         # Debug Tool to check contents of a cell with middle mouse click
         elif event.button == 2:
             mouse_pos = pygame.mouse.get_pos()
             mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
             x, y = convert_abs_coords_to_grid_coords(mouse_pos)
             print(get_cell(x, y))
+    if event.type == pygame.KEYDOWN:
+        print(cell.history)
 
                 
 def draw():
