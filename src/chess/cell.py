@@ -4,42 +4,8 @@ from src import pngHandler
 from typing import TYPE_CHECKING, Dict, Optional, List
 from src.settings import CELL_SIZE
 from src.chess import pieces
+from src.chess.util import Move
 
-
-class En_Passante:
-    def __init__(self):
-        self.checkPos = None
-        self.piecePos = None
-        self.team = False
-        self.active = 0
-
-    def set(self, piecePos:tuple = None, team:bool = False, active = 1):
-        self.piecePos = (piecePos[0], piecePos[1])
-        self.team = team
-        self.active = active
-        if self.team:
-            self.checkPos = (self.piecePos[0], 5)
-        else:
-            self.checkPos = (self.piecePos[0], 2)
-
-    def reset(self):
-        self.checkPos = None
-        self.piecePos = None
-        self.active = 0
-
-    def __repr__(self):
-        header = f"[class '{self.__class__.__name__}' Information]"
-        positionalInfo = f" toCheck={self.checkPos}\tpiecePos={self.piecePos}"
-        otherInfo = f" team={self.team}"
-        return f"{header}\n{positionalInfo}\n{otherInfo}\n"
-    
-en_passante = En_Passante()
-white_king:pieces.King = None
-black_king:pieces.King = None
-kings = {
-    True  : white_king,
-    False : black_king
-}
 
 class Cell:
     def __init__(self, pos, grid_x, grid_y):
@@ -82,7 +48,7 @@ class Cell:
         gameplay_info = f"(grid={self.grid_pos}, piece={self.piece})"
         return f"{header}\n{positional_info}\n{gameplay_info}\n"
 
-cells: Dict[tuple, Cell] = {} # {tuple: Cell}
+cells: Dict[tuple[int, int], Cell] = {} # {tuple: Cell}
 # API
 def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = None):
     cell = Cell(pos, grid_x, grid_y)
@@ -132,27 +98,25 @@ def draw(surface: pygame.Surface):
 
 def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
-    to.piece = frm.piece
-    to.piece.move(to.grid_pos[0], to.grid_pos[1])
+    frm.piece.move(to.grid_pos[0], to.grid_pos[1])
 
 
 # History of previous moves inspired by numeric
 history = ""
 
-def add_history(prev:tuple, next:tuple):
+def add_history(prev:tuple, next:tuple, promotion:pieces.Piece = None):
     history.join(f"{prev[0]}{prev[1]}{next[0]}{next[1]}")
 
 def remove_history():
     if history:
         history = history[:-4]
 
-def previous_move() -> tuple[int:int]:
-    if history:
-        return {
-            (int(history[-2]), int(history[-1]))
-        }
+def previous_move() -> Move:
+    if len(history) >= 4:
+        return Move((int(history[-4]), int(history[-3]))),(int(history[-2]), int(history[-1]))
     else:
-        return (-1, -1)
+        return None
     
 def past_move(pos:tuple[int:int]):
+    """Check if given position is in the history"""
     return f"{pos[0]}{pos[1]}" in history

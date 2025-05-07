@@ -3,7 +3,7 @@ from src import pngHandler
 from typing import List
 from src.chess.globals import ChessTeam, ChessPieces
 from src.chess import cell
-
+from src.chess.util import Move
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
         return 0
@@ -14,6 +14,7 @@ def out_of_bounds(pos:tuple[int,int]):
         pos[0] < 0 or pos[0] >= 8 or
         pos[1] < 0 or pos[1] >= 8
     )
+
 
 class Piece:
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
@@ -44,8 +45,10 @@ class Piece:
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
-        team_info = "[NotImplemented]"
-        return f"{header}\n{team_info}\n"
+        team_info = self.team
+        position = f"grid_pos: {self.cell.grid_pos}"
+        other_info = f"has moved: {self.has_moved}"
+        return f"{header}\n{team_info}\n{position}\n{other_info}\n"
 
     def is_valid_position(self, curr:tuple, dest:tuple):
         """
@@ -84,7 +87,7 @@ class Pawn(Piece):
             return cell.get_cell(dest[0], dest[1]).piece == None
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
-            if cell.en_passante.active:
+            if False:
                 if cell.en_passante.checkPos == dest:
                     return cell.en_passante.team != self.team_bool
             else:
@@ -133,11 +136,6 @@ class Pawn(Piece):
         return result
 
     def move(self, x, y):
-        if abs(y - self.cell.grid_pos[1]) == 2:
-            cell.en_passante.set((x, y), self.team_bool)
-        elif cell.en_passante.checkPos == (x, y):
-            cell.get_cell(cell.en_passante.piecePos[0], cell.en_passante.piecePos[1]).piece = None
-            cell.en_passante.reset()
         super().move(x, y)
 
 class Rook(Piece):
@@ -178,7 +176,6 @@ class Rook(Piece):
         return False
     
     def move(self, x, y):
-        cell.kings[self.team_bool].remove_castling(self.cell.grid_pos)
         super().move(x, y)
     
     def get_valid_moves(self):
@@ -186,10 +183,10 @@ class Rook(Piece):
         for i in [-1, 1]:
             temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1])
             while temp:
-                if not self.cell.piece.is_valid_position(self.cell.grid_pos):
+                if not self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     break
                 result.append(temp)
-                temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1])
+                temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1])
             temp = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + i)
             while temp:
                 if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
@@ -237,10 +234,6 @@ class Knight(Piece):
                     result.append(temp)
         return result
     def move(self, x, y):
-        if cell.en_passante.active > 1:
-            cell.en_passante.reset()
-        elif cell.en_passante.active == 1:
-            cell.en_passante.active += 1
         super().move(x, y)
     
 class Bishop(Piece):
@@ -351,7 +344,6 @@ class King(Piece):
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
         super().__init__(cell, team, piece)
         self.identity = 6 + 8 * self.team_bool
-        self.castling = {(2,7),(6,7)} if self.team_bool else {(2,0),(6,0)}
 
     def _set_styling(self):
         name = "white-king" if self.team_bool else "black-king"
@@ -377,16 +369,7 @@ class King(Piece):
     
     def is_valid_move(self, dest, ignore=None):
         if self.is_castling(dest.grid_pos):
-            if abs(dest.grid_pos[0] - self.cell.grid_pos[0]) == 2:
-                x_mod = sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0])
-                y_mod = sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1])
-                mid_way = cell.get_cell(self.cell.grid_pos[0] + x_mod, self.cell.grid_pos[1] + y_mod)
-                if (
-                    mid_way.piece == None and
-                    dest.piece == None
-                ):
-                    return not (self.in_check(cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[0])) or self.in_check(dest))
-
+            return True
         if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return not self.in_check(dest)
         
@@ -399,17 +382,55 @@ class King(Piece):
                     continue
                 if self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     result.append(temp)
-        if self.castling:
-            for i in self.castling:
-                result.append(cell.get_cell(i[0], i[1]))
+        # check queenside castling
+        if self.is_castling((2, self.cell.grid_pos[1])):
+            result.append(cell.get_cell(2, self.cell.grid_pos[1]))
+        # check kingside castling
+        if self.is_castling((6, self.cell.grid_pos[1])):
+            result.append(cell.get_cell(6, self.cell.grid_pos[1]))
         return result
 
     def is_castling(self, dest:tuple[int, int]) -> bool:
         """ Checks rather or not if the move with the given poisition would result in castling"""
-        if self.castling == None:
+        # Checking the initial conditions for castling
+        # has the king moved? ; is it the right coordinate
+        if self.has_moved:
             return False
-        return dest in self.castling
-
+        
+        if not (dest[0] in [2, 6]):
+            return False
+        if dest[1] != self.cell.grid_pos[1]:
+            return False
+        # constructing the position of the queenside or kingside Rook
+        if dest[0] < self.cell.grid_pos[0]:
+            rook_pos = (0, self.cell.grid_pos[1])
+        else:
+            rook_pos = (7, self.cell.grid_pos[1])
+        
+        rook_cell = cell.get_cell(rook_pos[0], rook_pos[1])
+        
+        if isinstance(rook_cell.piece, Rook):
+            if rook_cell.piece.has_moved:
+                return False
+            # calculate vector  to check anything between rook and King
+            diff_x = sign_of_number(rook_pos[0] - self.cell.grid_pos[0])
+            temp = cell.get_cell(self.cell.grid_pos[0] + diff_x, self.cell.grid_pos[1])
+            while temp.grid_pos != rook_cell.grid_pos:
+                if(temp.piece != None):
+                    return False
+                temp = cell.get_cell(temp.grid_pos[0] + diff_x, temp.grid_pos[1])
+            if temp.grid_pos != rook_pos:
+                return False
+            # check if the movement of the King would pass over a Check Position
+            temp = cell.get_cell(self.cell.grid_pos[0] + diff_x, self.cell.grid_pos[1])
+            if (self.in_check(temp)):
+                return False
+            temp = cell.get_cell(self.cell.grid_pos[0] + 2 * diff_x, self.cell.grid_pos[1])
+            if (self.in_check(temp)):
+                return False
+            return True
+        else:
+            return False
     def castling_kingside(self):
         if self.team_bool:
             super().move(6,7)
@@ -426,25 +447,8 @@ class King(Piece):
             super().move(2, 0)
             cell.get_cell(0, 0).piece.move(3, 0)
     
-    def remove_castling(self, toRemove:tuple[int, int] = None):
-        if self.castling == None:
-            return
-        elif toRemove == None:
-            self.castling = None
-            return
-        elif toRemove[0] == 0:
-            try:
-                self.castling.remove((2,toRemove[1]))
-            except:
-                pass
-        elif toRemove[0] == 7:
-            try:
-                self.castling.remove((6,toRemove[1]))
-            except:
-                pass
-
     def move(self, x, y):
-        if self.is_castling((x, y)):
+        if abs(x - self.cell.grid_pos[0]) == 2:
             if x < self.cell.grid_pos[0]:
                 self.castling_queenside()
             else:
@@ -452,7 +456,6 @@ class King(Piece):
             
         else:
             super().move(x, y)
-        self.remove_castling()
 
 # Get a Row full of Pawns
 def get_pawn_row() -> List[Piece]:

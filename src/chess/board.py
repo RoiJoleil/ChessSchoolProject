@@ -144,7 +144,7 @@ def set_start_position():
                     cell.create_cell(pos, x, y, pieces.Queen(None, team=team, piece=ChessPieces.QUEEN))
                 # King
                 if x == 4:
-                    cell.kings[team] = cell.create_cell(pos, x, y, pieces.King(None, team=team, piece=ChessPieces.KING)).piece
+                    cell.create_cell(pos, x, y, pieces.King(None, team=team, piece=ChessPieces.KING)).piece
             else:
                 cell.create_cell(pos, x, y)
 
@@ -177,6 +177,13 @@ def event(event: pygame.event.Event):
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
                 set_valid_target_cells(clicked_cell.piece.get_valid_moves())
+        # Debug Tool to check contents of a cell with middle mouse click
+        elif event.button == 2:
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
+            x, y = convert_abs_coords_to_grid_coords(mouse_pos)
+            print(get_cell(x, y))
+
                 
 def draw():
     """Draw the individual chessboard cells"""
