@@ -8,9 +8,12 @@ class ChessPieces:
     QUEEN = 5
     KING = 6
 
+# this is to signal which color is the bottom row (start at row 6/7)
+BOTTOMROW = True
+
 class ChessTeam:
-    WHITE = True
-    BLACK = False
+    WHITE = BOTTOMROW
+    BLACK = not BOTTOMROW
     team = {
         True : WHITE,
         False: BLACK

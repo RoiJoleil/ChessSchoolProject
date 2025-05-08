@@ -124,7 +124,7 @@ class Pawn(Piece):
         try:
             self.cell.piece = rank(self.cell, self.team)
         except Exception as exce:
-            print(exce)
+            print(f"pawn at {self.cell.grid_pos} failed to promote to {rank}\n{exce}")
 
 
     def is_valid_move(self, dest, ignore=None):
@@ -213,15 +213,20 @@ class Rook(Piece):
         for i in [-1, 1]:
             temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1])
             while temp:
-                if not self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos):
+                if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     break
                 result.append(temp)
+                if temp.piece != None:
+                    break
                 temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1])
+                
             temp = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + i)
             while temp:
                 if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                     break
                 result.append(temp)
+                if temp.piece != None:
+                    break
                 temp = cell.get_cell(temp.grid_pos[0], temp.grid_pos[1] + i)
         return result
 
@@ -311,6 +316,8 @@ class Bishop(Piece):
                     if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                         break
                     result.append(temp)
+                    if temp.piece != None:
+                        break
                     temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1] + j)
         return result
 
@@ -364,6 +371,8 @@ class Queen(Piece):
                     if not self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
                         break
                     result.append(temp)
+                    if temp.piece != None:
+                        break
                     temp = cell.get_cell(temp.grid_pos[0] + i, temp.grid_pos[1] + j)
         return result
 
@@ -460,19 +469,19 @@ class King(Piece):
 
     def castling_kingside(self):
         if self.team:
-            super().move(6,7)
             cell.get_cell(7, 7).piece.move(5,7)
+            super().move(6,7)
         else:
-            super().move(6, 0)
             cell.get_cell(7, 0).piece.move(5, 0)
+            super().move(6, 0)
     
     def castling_queenside(self):
         if self.team:
-            super().move(2, 7)
             cell.get_cell(0, 7).piece.move(3,7)
+            super().move(2, 7)
         else:
-            super().move(2, 0)
             cell.get_cell(0, 0).piece.move(3, 0)
+            super().move(2, 0)
     
     def move(self, x, y):
         if abs(x - self.cell.grid_pos[0]) == 2:

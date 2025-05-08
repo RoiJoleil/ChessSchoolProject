@@ -2,9 +2,10 @@ import pygame
 from typing import List, Dict
 from src.settings import CELL_SIZE
 from src.settings import CHESS_SURFACE_POSITION, CHESS_SURFACE_SIZE
-from src.chess.globals import ChessPieces, ChessTeam
+from src.chess.globals import ChessTeam
 from src.chess import cell, pieces
 from src.chess import pieces
+import time
 
 board_rect = None
 board_surface =  None
@@ -33,7 +34,7 @@ def make_move(frm: cell.Cell, to: cell.Cell):
         return
     
     # Return if its not our Turn
-    if (frm.piece.team != player_turn):
+    if False and (frm.piece.team != player_turn):
         print(f"{__name__}: make_move failed as its not '{player_turn}' Turn.")
         return
     
@@ -148,6 +149,19 @@ def set_start_position():
             else:
                 cell.create_cell(pos, x, y)
 
+def replay_history(delay:float = 1.2):
+    if len(cell.history) < 4:
+        return
+    cell.unset_record_history()
+    set_start_position()
+    replay_moves = cell.history_to_iterable()
+
+    for this_move in replay_moves:
+        make_move(cell.get_cell(this_move.prev[0], this_move.prev[1]), cell.get_cell(this_move.next[0], this_move.next[1]))
+        draw()
+        time.sleep(delay)
+        
+
 def event(event: pygame.event.Event):
     """Handle Click Events from the user"""
     global game_started
@@ -178,19 +192,19 @@ def event(event: pygame.event.Event):
             elif clicked_cell.piece:
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
+                cell.prev_move_unfocus()
                 set_valid_target_cells(clicked_cell.piece.get_valid_moves())
             if selected_cell == None:
                 cell.prev_move_focus()
-            else:
-                cell.prev_move_unfocus()
         # Debug Tool to check contents of a cell with middle mouse click
         elif event.button == 2:
             mouse_pos = pygame.mouse.get_pos()
             mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
             x, y = convert_abs_coords_to_grid_coords(mouse_pos)
             print(get_cell(x, y))
-
-                
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_INSERT:
+            replay_history()
 def draw():
     """Draw the individual chessboard cells"""
     global board_surface

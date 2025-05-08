@@ -102,11 +102,22 @@ def move_piece(frm: Cell, to: Cell):
 
 
 # History of previous moves inspired by numeric
+record_history = True
+
+def set_record_history():
+    global record_history
+    record_history = True
+
+def unset_record_history():
+    global record_history
+    record_history = False
+
 history = ""
 
 def add_history(prev:tuple, next:tuple, promotion:pieces.Piece = None):
-    global history
-    history = history + f"{prev[0]}{prev[1]}{next[0]}{next[1]}"
+    global history, record_history
+    if record_history:
+        history = history + f"{prev[0]}{prev[1]}{next[0]}{next[1]}"
 
 def remove_history():
     global history
@@ -119,6 +130,23 @@ def previous_move() -> Move:
         return Move((int(history[-4]), int(history[-3])),(int(history[-2]), int(history[-1])))
     else:
         return None
+def history_to_iterable() -> List[Move]:
+    result = []
+    for i in range(0, len(history), 4):
+        result.append(Move((int(history[i]), int(history[i + 1])),(int(history[i + 2]), int(history[i + 3]))))
+    
+    return result
+
+def has_been_touched(pos:tuple[int:int]):
+    """Check if given position is in the history"""
+    global history
+    i = 0
+    while len(history[i:]) > 2:
+        if history[i + 0] == pos[0] and history[i + 1] == pos[1]:
+            return True
+        i += 2
+    return False
+
 def prev_move_focus():
     global previous_move
     last_move = previous_move()
@@ -138,14 +166,3 @@ def prev_move_unfocus():
     global set_focus
     set_focus([prev, next])
     
-    
-
-def has_been_touched(pos:tuple[int:int]):
-    """Check if given position is in the history"""
-    global history
-    i = 0
-    while len(history[i:]) > 2:
-        if history[i + 0] == pos[0] and history[i + 1] == pos[1]:
-            return True
-        i += 2
-    return False
