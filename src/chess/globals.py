@@ -11,3 +11,13 @@ class ChessPieces:
 class ChessTeam:
     WHITE = True
     BLACK = False
+    team = {
+        True : WHITE,
+        False: BLACK
+    }
+# Line 
+class Territory:
+    line = {
+        True : 7,
+        False: 0
+    }

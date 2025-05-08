@@ -33,7 +33,7 @@ def make_move(frm: cell.Cell, to: cell.Cell):
         return
     
     # Return if its not our Turn
-    if False and (frm.piece.team != player_turn):
+    if (frm.piece.team != player_turn):
         print(f"{__name__}: make_move failed as its not '{player_turn}' Turn.")
         return
     
@@ -127,24 +127,24 @@ def set_start_position():
             team = ChessTeam.WHITE if bool(y // 4) else ChessTeam.BLACK
             # Pawn Rows
             if y in [1,6]:
-                cell.create_cell(pos, x, y, pieces.Pawn(None, team=team, piece=ChessPieces.PAWN))
+                cell.create_cell(pos, x, y, pieces.Pawn(None, team=team))
             # Nobility Row
             elif y in [0,7]:
                 # Rooks
                 if x in [0,7]:
-                    cell.create_cell(pos, x, y, pieces.Rook(None, team=team, piece=ChessPieces.ROOK))
+                    cell.create_cell(pos, x, y, pieces.Rook(None, team=team))
                 # Knights
                 if x in [1,6]:
-                    cell.create_cell(pos, x, y, pieces.Knight(None, team=team, piece=ChessPieces.KNIGHT))
+                    cell.create_cell(pos, x, y, pieces.Knight(None, team=team))
                 # Bishops
                 if x in [2,5]:
-                    cell.create_cell(pos, x, y, pieces.Bishop(None, team=team, piece=ChessPieces.BISHOP))
+                    cell.create_cell(pos, x, y, pieces.Bishop(None, team=team))
                 # Queen
                 if x == 3:
-                    cell.create_cell(pos, x, y, pieces.Queen(None, team=team, piece=ChessPieces.QUEEN))
+                    cell.create_cell(pos, x, y, pieces.Queen(None, team=team))
                 # King
                 if x == 4:
-                    cell.create_cell(pos, x, y, pieces.King(None, team=team, piece=ChessPieces.KING)).piece
+                    cell.create_cell(pos, x, y, pieces.King(None, team=team))
             else:
                 cell.create_cell(pos, x, y)
 
@@ -154,7 +154,8 @@ def event(event: pygame.event.Event):
     # Return if the game hasnt started yet
     if not game_started:
         return
-    
+    if not pygame.key.get_focused():
+        return
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1: # Leftclick Event
             mouse_pos = pygame.mouse.get_pos()
@@ -188,8 +189,6 @@ def event(event: pygame.event.Event):
             mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
             x, y = convert_abs_coords_to_grid_coords(mouse_pos)
             print(get_cell(x, y))
-    if event.type == pygame.KEYDOWN:
-        print(cell.history)
 
                 
 def draw():

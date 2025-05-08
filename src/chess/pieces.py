@@ -1,10 +1,9 @@
 import pygame
 from src import pngHandler
 from typing import List
-from src.chess.globals import ChessTeam, ChessPieces
+from src.chess.globals import ChessTeam, ChessPieces, Territory
 from src.chess import cell
 from src.chess.util import Move
-
 
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
@@ -18,14 +17,14 @@ def out_of_bounds(pos:tuple[int,int]):
     )
 
 
+        
+  
 class Piece:
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
         # Positional Information
         self.cell = cell
         self.team = team
         self.piece = piece
-        self.team_bool = True if self.team == ChessTeam.WHITE else False
-        self.identity = 0
         self.has_moved = False
         self.svg = None
 
@@ -34,6 +33,9 @@ class Piece:
 
     def _set_styling(self):
         raise NotImplementedError()
+    
+    def identity(self):
+        return self.piece + 8 * self.team
     
     def move(self, x: int, y: int):
         cell.add_history(self.cell.grid_pos,(x, y))
@@ -70,19 +72,18 @@ class Piece:
         raise NotImplementedError()
 
 class Pawn(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 1 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.PAWN)
 
     def _set_styling(self):
-        name = "white-pawn" if self.team_bool else "black-pawn"
+        name = "white-pawn" if self.team else "black-pawn"
         self.svg = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr:tuple, dest:tuple) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
         
-        if (dest[1] - curr[1]) != (-1 if self.team_bool else 1):
+        if (dest[1] - curr[1]) != (-1 if self.team else 1):
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
@@ -91,7 +92,7 @@ class Pawn(Piece):
         if abs(dest[0] - curr[0]) == 1:
             temp = cell.get_cell(dest[0], dest[1])
             if temp.piece != None:
-                return self.team_bool != temp.piece.team
+                return self.team != temp.piece.team
 
         return False
     
@@ -111,7 +112,19 @@ class Pawn(Piece):
             
         return self.is_valid_position((self.cell.grid_pos[0], self.cell.grid_pos[1] + diff_y), pawn_cell.grid_pos)
     
+    def is_promote(self) -> bool:
+        if self.cell.grid_pos[1] == Territory.line[not self.team]:
+            return True
+        return False
+    
 
+    def promote(self, rank):
+        if not rank:
+            return
+        try:
+            self.cell.piece = rank(self.cell, self.team)
+        except Exception as exce:
+            print(exce)
 
 
     def is_valid_move(self, dest, ignore=None):
@@ -135,13 +148,13 @@ class Pawn(Piece):
         # singular step forward
         result = []
         for i in [-1, 0, 1]:
-            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (-1 if self.team_bool else 1))
+            dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (-1 if self.team else 1))
             if dest == None:
                 continue
             if self.is_valid_move(dest):
                 result.append(dest)
         # double step forward
-        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2* (-1 if self.team_bool else 1))
+        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2* (-1 if self.team else 1))
         if dest:
             if self.is_valid_move(dest):
                 result.append(dest)
@@ -152,15 +165,16 @@ class Pawn(Piece):
             temp = cell.get_cell(x, self.cell.grid_pos[1])
             temp.piece = None
         super().move(x, y)
+        if self.is_promote():
+            self.promote(Queen)
 
 
 class Rook(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 2 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.ROOK)
 
     def _set_styling(self):
-        name = "white-rook" if self.team_bool else "black-rook"
+        name = "white-rook" if self.team else "black-rook"
         self.svg = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
@@ -168,7 +182,7 @@ class Rook(Piece):
             return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
-            if temp.piece.team == self.team_bool:
+            if temp.piece.team == self.team:
                 return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
     
@@ -212,12 +226,11 @@ class Rook(Piece):
         return result
 
 class Knight(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 3 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.KNIGHT)
 
     def _set_styling(self):
-        name = "white-knight" if self.team_bool else "black-knight"
+        name = "white-knight" if self.team else "black-knight"
         self.svg = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
@@ -225,7 +238,7 @@ class Knight(Piece):
             return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
-            if temp.piece.team == self.team_bool:
+            if temp.piece.team == self.team:
                 return False
         return (dest[0] - curr[0]) ** 2 + (dest[1] - curr[1]) ** 2 == 5
     
@@ -253,12 +266,11 @@ class Knight(Piece):
         super().move(x, y)
     
 class Bishop(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 4 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.BISHOP)
 
     def _set_styling(self):
-        name = "white-bishop" if self.team_bool else "black-bishop"
+        name = "white-bishop" if self.team else "black-bishop"
         self.svg = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
@@ -266,7 +278,7 @@ class Bishop(Piece):
             return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
-            if temp.piece.team == self.team_bool:
+            if temp.piece.team == self.team:
                 return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
     
@@ -303,12 +315,11 @@ class Bishop(Piece):
         return result
 
 class Queen(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 5 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.QUEEN)
 
     def _set_styling(self):
-        name = "white-queen" if self.team_bool else "black-queen"
+        name = "white-queen" if self.team else "black-queen"
         self.svg = pngHandler.get_pygame_image(name)
 
     def is_valid_position(self, curr, dest) -> bool:
@@ -316,7 +327,7 @@ class Queen(Piece):
             return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
-            if temp.piece.team == self.team_bool:
+            if temp.piece.team == self.team:
                 return False
         if abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 0:
             return False
@@ -357,19 +368,18 @@ class Queen(Piece):
         return result
 
 class King(Piece):
-    def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
-        super().__init__(cell, team, piece)
-        self.identity = 6 + 8 * self.team_bool
+    def __init__(self, cell: "cell.Cell", team: ChessTeam):
+        super().__init__(cell, team, ChessPieces.KING)
 
     def _set_styling(self):
-        name = "white-king" if self.team_bool else "black-king"
+        name = "white-king" if self.team else "black-king"
         self.svg = pngHandler.get_pygame_image(name)
 
     def in_check(self, check:"cell.Cell") -> bool:
         for x in range(0, 8):
             for y in range(0, 8):
                 threat = cell.get_cell(x, y)
-                if threat and threat.piece and threat.piece.team != self.team_bool:
+                if threat and threat.piece and threat.piece.team != self.team:
                     if (threat.piece.is_valid_move(check, self.cell)):
                         return True
         return False
@@ -379,7 +389,7 @@ class King(Piece):
             return False
         temp = cell.get_cell(dest[0], dest[1])
         if temp.piece:
-            if temp.piece.team == self.team_bool:
+            if temp.piece.team == self.team:
                 return False
         return 0 < (curr[0] - dest[0]) ** 2 + (curr[1] - dest[1]) ** 2 <= 2
     
@@ -449,7 +459,7 @@ class King(Piece):
             return False
 
     def castling_kingside(self):
-        if self.team_bool:
+        if self.team:
             super().move(6,7)
             cell.get_cell(7, 7).piece.move(5,7)
         else:
@@ -457,7 +467,7 @@ class King(Piece):
             cell.get_cell(7, 0).piece.move(5, 0)
     
     def castling_queenside(self):
-        if self.team_bool:
+        if self.team:
             super().move(2, 7)
             cell.get_cell(0, 7).piece.move(3,7)
         else:
