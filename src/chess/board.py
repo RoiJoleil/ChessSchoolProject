@@ -164,6 +164,7 @@ def event(event: pygame.event.Event):
             # deselect cell by clicking on it again.
             if selected_cell == clicked_cell:
                 cell.set_focus([selected_cell], None)
+                cell.prev_move_unfocus()
                 reset_valid_target_cells()
                 select_cell(None)
             # move piece if we have a cell selected.
@@ -177,10 +178,10 @@ def event(event: pygame.event.Event):
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
                 set_valid_target_cells(clicked_cell.piece.get_valid_moves())
-            last_move = cell.previous_move()
             if selected_cell == None:
-                if last_move:
-                    cell.set_focus([cell.get_cell(last_move.prev[0], last_move.prev[1]), cell.get_cell(last_move.next[0], last_move.next[1])], "prev")
+                cell.prev_move_focus()
+            else:
+                cell.prev_move_unfocus()
         # Debug Tool to check contents of a cell with middle mouse click
         elif event.button == 2:
             mouse_pos = pygame.mouse.get_pos()
