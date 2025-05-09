@@ -116,7 +116,35 @@ def set_valid_target_cells(cells: List[cell.Cell]):
     global valid_target_cells
     valid_target_cells = cells
     cell.set_focus(valid_target_cells, "move")
-        
+
+
+def set_pieces_standard():
+    for x in range(8):
+        for y in range(8):
+            pos = (x * CELL_SIZE, y * CELL_SIZE)
+            team = ChessTeam.WHITE if bool(y // 4) else ChessTeam.BLACK
+            # Pawn Rows
+            if y in [1,6]:
+                cell.get_cell(x, y).set_piece( pieces.Pawn(None, team=team))
+            # Nobility Row
+            elif y in [0,7]:
+                # Rooks
+                if x in [0,7]:
+                    cell.get_cell(x, y).set_piece(pieces.Rook(None, team=team))
+                # Knights
+                if x in [1,6]:
+                    cell.get_cell(x, y).set_piece(pieces.Knight(None, team=team))
+                # Bishops
+                if x in [2,5]:
+                    cell.get_cell(x, y).set_piece(pieces.Bishop(None, team=team))
+                # Queen
+                if x == 3:
+                    cell.get_cell(x, y).set_piece(pieces.Queen(None, team=team))
+                # King
+                if x == 4:
+                    cell.get_cell(x, y).set_piece(pieces.King(None, team=team))
+
+
 def set_start_position():
     """
     Sets the default start position.
@@ -153,14 +181,19 @@ def replay_history(delay:float = 1.2):
     if len(cell.history) < 4:
         return
     cell.unset_record_history()
-    set_start_position()
+    set_pieces_standard()
+    draw()
     replay_moves = cell.history_to_iterable()
 
     for this_move in replay_moves:
-        make_move(cell.get_cell(this_move.prev[0], this_move.prev[1]), cell.get_cell(this_move.next[0], this_move.next[1]))
-        draw()
+        prev_cell = cell.get_cell(this_move.prev[0], this_move.prev[1])
+        next_cell = cell.get_cell(this_move.next[0], this_move.next[1])
+        make_move(prev_cell, next_cell)
+        prev_cell.draw(board_surface)
+        next_cell.draw(board_surface)
         time.sleep(delay)
-        
+    
+
 
 def event(event: pygame.event.Event):
     """Handle Click Events from the user"""
@@ -179,7 +212,6 @@ def event(event: pygame.event.Event):
             # deselect cell by clicking on it again.
             if selected_cell == clicked_cell:
                 cell.set_focus([selected_cell], None)
-                cell.prev_move_unfocus()
                 reset_valid_target_cells()
                 select_cell(None)
             # move piece if we have a cell selected.
@@ -192,10 +224,7 @@ def event(event: pygame.event.Event):
             elif clicked_cell.piece:
                 select_cell(clicked_cell)
                 cell.set_focus([selected_cell], "selected")
-                cell.prev_move_unfocus()
                 set_valid_target_cells(clicked_cell.piece.get_valid_moves())
-            if selected_cell == None:
-                cell.prev_move_focus()
         # Debug Tool to check contents of a cell with middle mouse click
         elif event.button == 2:
             mouse_pos = pygame.mouse.get_pos()

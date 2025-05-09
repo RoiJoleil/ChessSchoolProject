@@ -149,12 +149,11 @@ class Pawn(Piece):
         result = []
         for i in [-1, 0, 1]:
             dest = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + (-1 if self.team else 1))
-            if dest == None:
-                continue
-            if self.is_valid_move(dest):
-                result.append(dest)
+            if dest:
+                if self.is_valid_move(dest):
+                    result.append(dest)
         # double step forward
-        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2* (-1 if self.team else 1))
+        dest = cell.get_cell(self.cell.grid_pos[0], self.cell.grid_pos[1] + 2 * (-1 if self.team else 1))
         if dest:
             if self.is_valid_move(dest):
                 result.append(dest)
@@ -256,16 +255,14 @@ class Knight(Piece):
             for j in [-2, 2]:
                 # 1 2
                 temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
-                if temp == None:
-                    continue
-                if self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos):
-                    result.append(temp)
+                if temp:
+                    if self.cell.piece.is_valid_position(self.cell.grid_pos, temp.grid_pos):
+                        result.append(temp)
                 # 2 1
                 temp = cell.get_cell(self.cell.grid_pos[0] + j, self.cell.grid_pos[1] + i)
-                if temp == None:
-                    continue
-                if self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
-                    result.append(temp)
+                if temp:
+                    if self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
+                        result.append(temp)
         return result
     def move(self, x, y):
         super().move(x, y)
