@@ -13,7 +13,6 @@ player_turn = None
 game_started = None
 selected_cell = None
 valid_target_cells = []
-last_move_cells = []
 
 def init(screen: pygame.Surface):
     global board_rect, board_surface, player_turn, game_started
@@ -111,12 +110,6 @@ def select_cell(selected: cell.Cell):
     """Selects a cell to do actions with. 'None' is also a valid argument."""
     global selected_cell
     selected_cell = selected
-
-def set_last_move_cells(cells: List[cell.Cell]):
-    global last_move_cells
-    cell.unfocus(last_move_cells, "prev")
-    last_move_cells = cells
-    cell.set_focus(last_move_cells, "prev")
 
 def reset_valid_target_cells():
     global valid_target_cells
@@ -230,8 +223,9 @@ def event(event: pygame.event.Event):
             elif selected_cell:
                 cell.unfocus([selected_cell], "selected")
                 reset_valid_target_cells()
-                if make_move(selected_cell, clicked_cell):
-                    set_last_move_cells([selected_cell, clicked_cell])
+                cell.prev_move_unfocus()
+                make_move(selected_cell, clicked_cell)
+                cell.prev_move_focus()
                 select_cell(None)
             # select a cell if the clicked cell has a piece.
             elif clicked_cell.piece:

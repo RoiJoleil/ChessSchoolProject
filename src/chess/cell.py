@@ -183,5 +183,5 @@ def prev_move_unfocus():
         return
     prev, next = get_cell(last_move.prev[0], last_move.prev[1]), get_cell(last_move.next[0], last_move.next[1])
     global set_focus
-    set_focus([prev, next])
+    unfocus([prev, next], "prev")
     
