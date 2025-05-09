@@ -12,16 +12,16 @@ class Cell:
         self.rect = pygame.rect.Rect(pos[0], pos[1], CELL_SIZE, CELL_SIZE)
         self.grid_pos = (grid_x, grid_y)
         self.piece = None
-        self.focus = None
+        self.focus = {"selected-focus": None, "move-focus": None, "prev-focus": None}
 
         self._set_styling()
 
-    def set_focus(self, img: Optional[pygame.Surface]):
+    def set_focus(self, img: Optional[pygame.Surface], typ: str):
         """
         Set a focus to the tile if its of importance.
         I.e. the move options, if there was a move previously or if its currently selected.
         """
-        self.focus = img
+        self.focus[typ] = img
 
     def get_position(self) -> tuple:
         return (self.rect.x, self.rect.y)
@@ -39,8 +39,12 @@ class Cell:
         screen.blit(self.tile, (self.rect.x, self.rect.y))
         if self.piece:
             self.piece.draw(screen)
-        if self.focus:
-            screen.blit(self.focus, (self.rect.x, self.rect.y))
+        if self.focus["selected-focus"]:
+            screen.blit(self.focus["selected-focus"], (self.rect.x, self.rect.y))
+        elif self.focus["move-focus"]:
+            screen.blit(self.focus["move-focus"], (self.rect.x, self.rect.y))
+        elif self.focus["prev-focus"]:
+            screen.blit(self.focus["prev-focus"], (self.rect.x, self.rect.y))
             
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
@@ -67,30 +71,45 @@ def get_cells():
     global cells
     return cells
 
+def unfocus(cells: List[Cell], focus_type: str = None):
+    """
+    Sets a focus on a cell. Valid focus types are:
+    - selected
+    - move
+    - prev
+    """
+    if not cells:
+        return
+    for cell in cells:
+        if focus_type == "selected":
+            cell.set_focus(None, "selected-focus")
+        elif focus_type == "move":
+            cell.set_focus(None, "move-focus")
+        elif focus_type == "prev":
+            cell.set_focus(None, "prev-focus")
+
 def set_focus(cells: List[Cell], focus_type: str = None):
     """
     Sets a focus on a cell. Valid focus types are:
     - selected
     - move
     - prev
-    - None
     """
     if not cells:
         return
     for cell in cells:
         if focus_type == "selected":
-            cell.set_focus(pngHandler.get_pygame_image("selected-focus"))
+            cell.set_focus(pngHandler.get_pygame_image("selected-focus"), "selected-focus")
         elif focus_type == "move":
-            cell.set_focus(pngHandler.get_pygame_image("move-focus"))
+            cell.set_focus(pngHandler.get_pygame_image("move-focus"), "move-focus")
         elif focus_type == "prev":
-            cell.set_focus(pngHandler.get_pygame_image("prev-focus"))
-        elif focus_type is None:
-            cell.set_focus(None)
+            cell.set_focus(pngHandler.get_pygame_image("prev-focus"), "prev-focus")
 
 def clear_board():
     """For restarting a game."""
     global cells
     cells.clear()
+
 def draw(surface: pygame.Surface):
     global cells
     for cell in cells.values():
