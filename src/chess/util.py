@@ -1,5 +1,5 @@
-import re
 from src.settings import CELL_SIZE
+from src.pngHandler import get_pygame_image as get_image
 
 
 def convert_abs_coords_to_grid_coords(pos: tuple) -> tuple:
@@ -16,6 +16,3 @@ class Move:
         self.next:tuple[int,int] = next
     def __repr__(self):
         return f"prev: {self.prev}\tnext: {self.next}"
-
-      
-        

@@ -13,6 +13,7 @@ player_turn = None
 game_started = None
 selected_cell = None
 valid_target_cells = []
+start_replay_time = None
 
 def init(screen: pygame.Surface):
     global board_rect, board_surface, player_turn, game_started
@@ -29,8 +30,9 @@ def make_move(frm: cell.Cell, to: cell.Cell) -> bool:
     Returns:
         A boolean value if the move was made.
     """
+    if start_replay_time:
+        return False
     global player_turn
-
     # Return if frm has no Piece
     if frm.piece == None:
         print(f"{__name__}: make_move failed as 'frm' has no Piece.")
@@ -148,6 +150,8 @@ def set_pieces_standard():
                 # King
                 if x == 4:
                     cell.get_cell(x, y).set_piece(pieces.King(None, team=team))
+            else:
+                cell.get_cell(x, y).set_piece(None)
 
 
 def set_start_position():
@@ -183,21 +187,7 @@ def set_start_position():
                 cell.create_cell(pos, x, y)
 
 def replay_history(delay:float = 1.2):
-    if len(cell.history) < 4:
-        return
-    cell.unset_record_history()
-    set_pieces_standard()
-    draw()
-    replay_moves = cell.history_to_iterable()
-
-    for this_move in replay_moves:
-        prev_cell = cell.get_cell(this_move.prev[0], this_move.prev[1])
-        next_cell = cell.get_cell(this_move.next[0], this_move.next[1])
-        make_move(prev_cell, next_cell)
-        prev_cell.draw(board_surface)
-        next_cell.draw(board_surface)
-        time.sleep(delay)
-    
+    pass
 
 
 def event(event: pygame.event.Event):
