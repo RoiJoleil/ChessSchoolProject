@@ -118,6 +118,12 @@ def move_piece(frm: Cell, to: Cell):
     """Move a piece from one cell to another."""
     frm.piece.move(to.grid_pos[0], to.grid_pos[1])
 
+def get_king(team:bool) -> pieces.King:
+    for temp_cell in cells.values:
+        if isinstance(temp_cell.piece, pieces.King):
+            if temp_cell.piece.team == team:
+                return temp_cell
+    return None
 
 # History of previous moves inspired by numeric
 record_history = True
