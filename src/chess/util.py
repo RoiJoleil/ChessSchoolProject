@@ -16,3 +16,8 @@ class Move:
         self.next:tuple[int,int] = next
     def __repr__(self):
         return f"prev: {self.prev}\tnext: {self.next}"
+    
+class GhostPiece:
+    def __init__(self, grid_pos:tuple[int, int], team:bool):
+        self.grid_pos = grid_pos
+        self.team = team
