@@ -1,37 +1,41 @@
 import pygame
 import random
 from src import pngHandler
-from typing import TYPE_CHECKING, Dict, Optional, List
+from typing import TYPE_CHECKING, Dict, Optional, List, Tuple
 from src.settings import CELL_SIZE
 from src.chess import pieces
 from src.chess.util import Move
+from enum import Enum
 
+GridPos = Tuple[int, int]
+ScreenPos = Tuple[int, int]
+
+class FocusType(Enum):
+    SELECTED = "selected-focus"
+    MOVE = "move-focus"
+    PREV = "prev-focus"
 
 class Cell:
-    def __init__(self, pos, grid_x, grid_y):
-        self.rect = pygame.rect.Rect(pos[0], pos[1], CELL_SIZE, CELL_SIZE)
-        self.grid_pos = (grid_x, grid_y)
+    def __init__(self, screen_pos: ScreenPos, grid_pos: GridPos):
+        self.rect = pygame.rect.Rect(screen_pos[0], screen_pos[1], CELL_SIZE, CELL_SIZE)
+        self.grid_pos = (grid_pos[0], grid_pos[1])
         self.piece = None
-        self.focus = {"selected-focus": False, "move-focus": False, "prev-focus": False}
+        self.focus = {FocusType.SELECTED: False, FocusType.MOVE: False, FocusType.PREV: False}
 
         self._set_styling()
 
-    def reset_focus(self, typ: str):
+    def toggle_focus(self, typ: FocusType, mode: bool):
         """
         Set a focus to the tile if its of importance.
         I.e. the move options, if there was a move previously or if its currently selected.
         """
-        self.focus[typ] = False
+        self.focus[typ] = mode
 
-    def set_focus(self, typ: str):
-        """
-        Set a focus to the tile if its of importance.
-        I.e. the move options, if there was a move previously or if its currently selected.
-        """
-        self.focus[typ] = True
-
-    def get_position(self) -> tuple:
+    def get_screen_position(self) -> ScreenPos:
         return (self.rect.x, self.rect.y)
+
+    def get_grid_position(self) -> GridPos:
+        return self.grid_pos
 
     def set_piece(self, piece: "pieces.Piece" = None):
         self.piece = piece
@@ -48,12 +52,13 @@ class Cell:
         screen.blit(self.tile, (self.rect.x, self.rect.y))
         if self.piece:
             self.piece.draw(screen)
-        if self.focus["selected-focus"]:
-            screen.blit(pngHandler.get_pygame_image("selected-focus"), (self.rect.x, self.rect.y))
-        elif self.focus["move-focus"]:
-            screen.blit(pngHandler.get_pygame_image("move-focus"), (self.rect.x, self.rect.y))
-        elif self.focus["prev-focus"]:
-            screen.blit(pngHandler.get_pygame_image("prev-focus"), (self.rect.x, self.rect.y))
+
+        if self.focus[FocusType.SELECTED]:
+            screen.blit(pngHandler.get_pygame_image(FocusType.SELECTED.value), (self.rect.x, self.rect.y))
+        elif self.focus[FocusType.MOVE]:
+            screen.blit(pngHandler.get_pygame_image(FocusType.MOVE.value), (self.rect.x, self.rect.y))
+        elif self.focus[FocusType.PREV]:
+            screen.blit(pngHandler.get_pygame_image(FocusType.PREV.value), (self.rect.x, self.rect.y))
             
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
@@ -61,53 +66,37 @@ class Cell:
         gameplay_info = f"(grid={self.grid_pos}, piece={self.piece})"
         return f"{header}\n{positional_info}\n{gameplay_info}\n"
 
-cells: Dict[tuple[int, int], Cell] = {} # {tuple: Cell}
+cells: Dict[GridPos, Cell] = {}
 # API
-def create_cell(pos: tuple, grid_x: int, grid_y: int, piece:"pieces.Piece" = None):
-    cell = Cell(pos, grid_x, grid_y)
+def create_cell(screen_pos: ScreenPos, grid_pos: GridPos, piece:"pieces.Piece" = None):
+    cell = Cell(screen_pos, grid_pos)
     if piece:
         cell.set_piece(piece)
-        cell.piece.cell = cell
     cells[cell.grid_pos] = cell
     return cell
+
+def full_reset_focus():
+    """Resets the focus on all Cells"""
+    for cell in cells.values():
+        cell.toggle_focus(FocusType.SELECTED, False)
+        cell.toggle_focus(FocusType.MOVE, False)
+        cell.toggle_focus(FocusType.PREV, False)
+
+def set_piece(x, y, piece: Optional[pieces.Piece]):
+    cell = get_cell(x, y)
+    cell.set_piece(piece)
 
 def get_cell(x: int, y: int) -> Cell:
     global cells
     return cells.get((x, y), None)
 
-def get_cells():
-    """Get the entire board"""
-    global cells
-    return cells
-
-def unfocus(cells: List[Cell], focus_type: str = None):
-    """
-    Sets a focus on a cell. Valid focus types are:
-    - selected
-    - move
-    - prev
-    """
+def set_focus(cells: List[Cell], focus_type: FocusType, mode: bool):
+    """Sets the focus on a cell"""
     if not cells:
         return
+    
     for cell in cells:
-        cell.reset_focus(focus_type + "-focus")
-
-def set_focus(cells: List[Cell], focus_type: str = None):
-    """
-    Sets a focus on a cell. Valid focus types are:
-    - selected
-    - move
-    - prev
-    """
-    if not cells:
-        return
-    for cell in cells:
-        cell.set_focus(focus_type + "-focus")
-
-def clear_board():
-    """For restarting a game."""
-    global cells
-    cells.clear()
+        cell.toggle_focus(focus_type, mode)
 
 def draw(surface: pygame.Surface):
     global cells
@@ -154,6 +143,7 @@ def previous_move() -> Move:
         return Move((int(history[-4]), int(history[-3])),(int(history[-2]), int(history[-1])))
     else:
         return None
+    
 def history_to_iterable() -> List[Move]:
     result = []
     for i in range(0, len(history), 4):
@@ -161,7 +151,7 @@ def history_to_iterable() -> List[Move]:
     
     return result
 
-def has_been_touched(pos:tuple[int:int]):
+def has_been_touched(pos: Tuple[int, int]):
     """Check if given position is in the history"""
     global history
     i = 0
@@ -178,9 +168,8 @@ def prev_move_focus():
         return
     prev, next = get_cell(last_move.prev[0], last_move.prev[1]), get_cell(last_move.next[0], last_move.next[1])
     global set_focus
-    set_focus([prev, next], "prev")
+    set_focus([prev, next], FocusType.PREV, True)
     
-
 def prev_move_unfocus():
     global previous_move
     last_move = previous_move()
@@ -188,5 +177,5 @@ def prev_move_unfocus():
         return
     prev, next = get_cell(last_move.prev[0], last_move.prev[1]), get_cell(last_move.next[0], last_move.next[1])
     global set_focus
-    unfocus([prev, next], "prev")
+    set_focus([prev, next], FocusType.PREV, False)
     

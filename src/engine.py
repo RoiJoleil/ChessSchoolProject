@@ -1,46 +1,37 @@
 """This file contains the main loop while the application is running"""
 import pygame
-from src.settings import SCREEN_SIZE, FPS
-from src.chess import board
 from src import pngHandler
-from src.util.filemanager import Filemanager
-from src.util.filemanager import GameConverter
-
 pygame.init()
-pygame.display.set_caption('Chess')
-screen = pygame.display.set_mode(SCREEN_SIZE)
-clock = pygame.time.Clock()
 pngHandler.init()
-board.init(screen)
+
+from .gui import start_game_button
+from src.settings import FPS, SCREEN_SURFACE, CLOCK
+from src.chess import board
+
+pygame.display.set_caption('Chess')
+board.init(SCREEN_SURFACE)
 
 running = True
 
-def _event(event):
-    board.event(event)
-
-def _draw():
-    board.draw()
-
 def run():
-    global running, screen, clock
+    global running, SCREEN_SURFACE, CLOCK
     board.start_game()
     
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_press = pygame.mouse.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            _event(event)
+            board.event(event)
 
-        # Fill Screen initially as Black
-        screen.fill((0, 0, 0))
+        SCREEN_SURFACE.fill((0, 0, 0))
+        board.draw()
+        start_game_button.update_states(mouse_pos, mouse_press[0])
+        start_game_button.update()
+        start_game_button.draw(SCREEN_SURFACE)
 
-        _draw()
-
-        # Update the Screen
         pygame.display.flip()
-        clock.tick(FPS)
+        CLOCK.tick(FPS)
 
-    #print(f"save Data\n{GameConverter.construct_save_data()}")
-    #Filemanager.save_file_dialog()
-    # Quit the App
     pygame.quit()

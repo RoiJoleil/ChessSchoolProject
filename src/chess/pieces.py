@@ -4,6 +4,7 @@ from typing import List
 from src.chess.globals import ChessTeam, ChessPieces, Territory
 from src.chess import cell
 from src.chess.util import Move, GhostPiece
+from src.chess.promotion import promotion_selection
 
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
@@ -17,8 +18,6 @@ def out_of_bounds(pos:tuple[int,int]):
     )
 
 
-        
-  
 class Piece:
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
         # Positional Information
@@ -53,7 +52,7 @@ class Piece:
 
     def __repr__(self):
         header = f"[class '{self.__class__.__name__}' Information]"
-        team_info = self.team
+        team_info = f"Team: {self.team}"
         position = f"grid_pos: {self.cell.grid_pos}"
         other_info = f"has moved: {self.has_moved}"
         return f"{header}\n{team_info}\n{position}\n{other_info}\n"
@@ -93,12 +92,13 @@ class Pawn(Piece):
 
     def _set_styling(self):
         name = "white-pawn" if self.team else "black-pawn"
+        self.team_name = "white" if self.team else "black"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr:tuple, dest:tuple, ghost:GhostPiece = None) -> bool:
+    def is_valid_position(self, curr:tuple, dest:tuple, ghost:GhostPiece) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
-        # only one direction is allowed
+        
         if (dest[1] - curr[1]) != (-1 if self.team else 1):
             return False
         # if the movement is vertical the Cell must be empty
@@ -146,14 +146,19 @@ class Pawn(Piece):
             return True
         return False
     
-    def promote(self, rank):
-        if not rank:
+    def promote(self, piece: Piece):
+        """
+        Promote the pawn to the desired Piece.
+        
+        Args:
+            piece (Piece): What Piece the pawn promotes to.
+        """
+        if not piece:
             return
         try:
-            self.cell.piece = rank(self.cell, self.team)
+            self.cell.piece = piece(self.cell, self.team)
         except Exception as exce:
-            print(f"pawn at {self.cell.grid_pos} failed to promote to {rank}\n{exce}")
-
+            print(f"pawn at {self.cell.grid_pos} failed to promote to {piece}\n{exce}")
 
     def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
@@ -192,8 +197,15 @@ class Pawn(Piece):
             temp.piece = None
         super().move(x, y)
         if self.is_promote():
-            self.promote(Queen)
-
+            choice = promotion_selection(self.team_name)
+            if choice == "Queen":
+                self.promote(Queen)
+            if choice == "Rook":
+                self.promote(Rook)
+            if choice == "Bishop":
+                self.promote(Bishop)
+            if choice == "Knight":
+                self.promote(Knight)
 
 class Rook(Piece):
     def __init__(self, cell: "cell.Cell", team: ChessTeam):
