@@ -1,4 +1,4 @@
-### Chess School Project
+# Chess School Project
 
 ## Installation
 ```
