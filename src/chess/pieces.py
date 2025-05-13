@@ -109,7 +109,7 @@ class Pawn(Piece):
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
             if ghost and ghost.grid_pos == dest:
-                return self.team != ghost.team
+                return self.team == ghost.team
             temp = cell.get_cell(dest[0], dest[1])
             if temp.piece != None:
                 return self.team != temp.piece.team
@@ -157,15 +157,11 @@ class Pawn(Piece):
 
     def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
-            if ghost:
-                if ghost.grid_pos == dest.grid_pos:
-                    return False
             if self.has_moved:
                 return False
             if (dest.grid_pos[0] != self.cell.grid_pos[0]):
                 return False
             diff_y = sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1])
-
             return (
                 cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + diff_y).piece == None and
                 cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + 2 * diff_y).piece == None
@@ -207,17 +203,13 @@ class Rook(Piece):
         name = "white-rook" if self.team else "black-rook"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr, dest, ghost:GhostPiece = None) -> bool:
+    def is_valid_position(self, curr, dest) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
-        if ghost and ghost.grid_pos == dest:
-            if ghost.team == self.team:
+        temp = cell.get_cell(dest[0], dest[1])
+        if temp.piece:
+            if temp.piece.team == self.team:
                 return False
-        else:
-            temp = cell.get_cell(dest[0], dest[1])
-            if temp.piece:
-                if temp.piece.team == self.team:
-                    return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
     
     def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
@@ -272,18 +264,13 @@ class Knight(Piece):
         name = "white-knight" if self.team else "black-knight"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr, dest, ghost:GhostPiece = None) -> bool:
+    def is_valid_position(self, curr, dest) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
         temp = cell.get_cell(dest[0], dest[1])
-        if ghost and ghost.grid_pos == dest:
-            if ghost.team == self.team:
+        if temp.piece:
+            if temp.piece.team == self.team:
                 return False
-        else:
-            temp = cell.get_cell(dest[0], dest[1])
-            if temp.piece:
-                if temp.piece.team == self.team:
-                    return False
         return (dest[0] - curr[0]) ** 2 + (dest[1] - curr[1]) ** 2 == 5
     
     def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
@@ -315,18 +302,13 @@ class Bishop(Piece):
         name = "white-bishop" if self.team else "black-bishop"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr, dest, ghost:GhostPiece = None) -> bool:
+    def is_valid_position(self, curr, dest) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
         temp = cell.get_cell(dest[0], dest[1])
-        if ghost and ghost.grid_pos == dest:
-            if ghost.team == self.team:
+        if temp.piece:
+            if temp.piece.team == self.team:
                 return False
-        else:
-            temp = cell.get_cell(dest[0], dest[1])
-            if temp.piece:
-                if temp.piece.team == self.team:
-                    return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
     
     def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
@@ -371,23 +353,19 @@ class Queen(Piece):
         name = "white-queen" if self.team else "black-queen"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr, dest, ghost:GhostPiece = None) -> bool:
+    def is_valid_position(self, curr, dest) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
-        if ghost and ghost.grid_pos == dest:
-            if ghost.team == self.team:
+        temp = cell.get_cell(dest[0], dest[1])
+        if temp.piece:
+            if temp.piece.team == self.team:
                 return False
-        else:
-            temp = cell.get_cell(dest[0], dest[1])
-            if temp.piece:
-                if temp.piece.team == self.team:
-                    return False
         if abs(dest[0] - curr[0]) + abs(dest[1] - curr[1]) == 0:
             return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
     def is_valid_move(self, dest, ignore = None, ghost:GhostPiece = None):
-        if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos, ghost):
+        if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False
         global sign_of_number
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
@@ -436,13 +414,11 @@ class King(Piece):
         for x in range(0, 8):
             for y in range(0, 8):
                 threat = cell.get_cell(x, y)
-                if threat.grid_pos == self.cell.grid_pos:
-                    continue
                 if threat and threat.piece and threat.piece.team != self.team:
                     if isinstance(threat.piece, King):
                         if threat.piece.is_valid_position(threat.grid_pos, check.grid_pos):
                             return True
-                    if (threat.piece.is_valid_move(check, ignore, GhostPiece(check.grid_pos, self.team))):
+                    if (threat.piece.is_valid_move(check, ignore)):
                         return True
         return False
 
