@@ -1,7 +1,7 @@
 import pygame
 from src import pngHandler
 from typing import List
-from src.chess.globals import ChessTeam, ChessPieces, Territory
+from src.globals import ChessTeam, ChessPieces, Territory
 from src.chess import cell
 from src.chess.util import Move, GhostPiece
 from src.chess.promotion import promotion_selection
