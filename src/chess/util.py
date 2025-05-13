@@ -12,7 +12,8 @@ def convert_abs_coords_to_grid_coords(pos: tuple) -> tuple:
 
 class Move:
     def __init__(self, prev:tuple[int,int], next:tuple[int,int]):
-        self.prev:tuple[int,int] = prev
-        self.next:tuple[int,int] = next
+        self.prev: tuple[int, int] = prev
+        self.next: tuple[int, int] = next
+
     def __repr__(self):
         return f"prev: {self.prev}\tnext: {self.next}"

@@ -18,8 +18,6 @@ def out_of_bounds(pos:tuple[int,int]):
     )
 
 
-        
-  
 class Piece:
     def __init__(self, cell: "cell.Cell", team: ChessTeam, piece: ChessPieces):
         # Positional Information
@@ -171,13 +169,13 @@ class Pawn(Piece):
         super().move(x, y)
         if self.is_promote():
             choice = promotion_selection(self.team_name)
-            if choice["click"] == "Queen":
+            if choice == "Queen":
                 self.promote(Queen)
-            if choice["click"] == "Rook":
+            if choice == "Rook":
                 self.promote(Rook)
-            if choice["click"] == "Bishop":
+            if choice == "Bishop":
                 self.promote(Bishop)
-            if choice["click"] == "Knight":
+            if choice == "Knight":
                 self.promote(Knight)
 
 class Rook(Piece):
@@ -298,8 +296,7 @@ class Bishop(Piece):
     
     def is_valid_move(self, dest, ignore=None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
-            return False        
-        global sign_of_number
+            return False  
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
@@ -352,7 +349,6 @@ class Queen(Piece):
     def is_valid_move(self, dest, ignore = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False
-        global sign_of_number
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
