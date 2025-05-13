@@ -1,10 +1,10 @@
 import pygame
-from src.chess.promotion import promotion_selection
 from src import pngHandler
 from typing import List
-from src.globals import ChessTeam, ChessPieces, Territory
+from src.chess.globals import ChessTeam, ChessPieces, Territory
 from src.chess import cell
-from src.chess.util import Move
+from src.chess.util import Move, GhostPiece
+from src.chess.promotion import promotion_selection
 
 def sign_of_number(nmb:int) -> int:
     if nmb == 0:
@@ -34,6 +34,9 @@ class Piece:
         raise NotImplementedError()
     
     def identity(self):
+        """
+        Integer representation of a piece
+        """
         return self.piece + 8 * self.team
     
     def move(self, x: int, y: int):
@@ -54,20 +57,33 @@ class Piece:
         other_info = f"has moved: {self.has_moved}"
         return f"{header}\n{team_info}\n{position}\n{other_info}\n"
 
-    def is_valid_position(self, curr:tuple, dest:tuple):
+    def is_valid_position(self, curr:tuple, dest:tuple) -> bool:
         """
         checks if the destination is a valid position from the current position
         Args:
             curr(tuple): current Position of the Piece
             dest(tuple): destination position of the Piece
             pieceInHex(int): Value fo what is in the Cell, -1 is None, 0 is White 1 is Black
+        Returns:
+            True if is valid position
         """
         raise not NotImplementedError
     
     def is_valid_move(self, dest : "cell.Cell", ignore:"cell.Cell") -> bool:
+        """
+        Check if the destination would be a valid move of this piece
+        Args:
+            dest(cell.Cell): cell where this piece should be placed
+            ignore(cell.Cell): cell to ignore while checking
+        """
         raise not NotImplementedError
     
     def get_valid_moves(self) -> List["cell.Cell"]:
+        """
+        gets all valid moves
+        Returns:
+            list of cells that would be valid position
+        """
         raise NotImplementedError()
 
 class Pawn(Piece):
@@ -79,7 +95,7 @@ class Pawn(Piece):
         self.team_name = "white" if self.team else "black"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def is_valid_position(self, curr:tuple, dest:tuple) -> bool:
+    def is_valid_position(self, curr:tuple, dest:tuple, ghost:GhostPiece) -> bool:
         if out_of_bounds(curr) or out_of_bounds(dest):
             return False
         
@@ -87,20 +103,33 @@ class Pawn(Piece):
             return False
         # if the movement is vertical the Cell must be empty
         if curr[0] == dest[0]:
+            if ghost and ghost.grid_pos == dest:
+                return False
             return cell.get_cell(dest[0], dest[1]).piece == None
         # if the movement is diagonal the Tile has to be occupied by the other team
         if abs(dest[0] - curr[0]) == 1:
+            if ghost and ghost.grid_pos == dest:
+                return self.team == ghost.team
             temp = cell.get_cell(dest[0], dest[1])
             if temp.piece != None:
                 return self.team != temp.piece.team
 
         return False
     
-    def is_en_passante(self, dest:tuple[int,int]) -> bool:
+    def is_en_passant(self, dest:tuple[int,int]) -> bool:
+        """
+        checks if the destination position would result in an valid en passant
+        Args:
+            dest(tuple[int,int]): Position to check
+        Returns:
+            True if valid en passant
+        """
+        # load the previous move
         last_move = cell.previous_move()
         if last_move == None:
             return False
         pawn_cell = cell.get_cell(last_move.next[0], last_move.next[1])
+        # if the previous move wasn't with a Pawn it is not en passant
         if not isinstance(pawn_cell.piece, Pawn):
             return False
         # with the vector of the previous Move you should be able to construct the destination
@@ -131,7 +160,7 @@ class Pawn(Piece):
         except Exception as exce:
             print(f"pawn at {self.cell.grid_pos} failed to promote to {piece}\n{exce}")
 
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if abs(dest.grid_pos[1] - self.cell.grid_pos[1]) == 2:
             if self.has_moved:
                 return False
@@ -142,10 +171,10 @@ class Pawn(Piece):
                 cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + diff_y).piece == None and
                 cell.get_cell(dest.grid_pos[0], self.cell.grid_pos[1] + 2 * diff_y).piece == None
                 )
-        if self.is_en_passante(dest.grid_pos):
+
+        if self.is_en_passant(dest.grid_pos):
             return True
-    
-        return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
+        return self.is_valid_position(self.cell.grid_pos, dest.grid_pos, ghost)
 
     def get_valid_moves(self):
         # singular step forward
@@ -195,11 +224,11 @@ class Rook(Piece):
                 return False
         return bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
     
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
-        for i in range(1,8):
+        for i in range(1, 8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
             temp_y = self.cell.grid_pos[1] + diff[1] * i
             if (
@@ -210,7 +239,7 @@ class Rook(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None and temp != ignore:
+            if temp.piece and temp != ignore or ghost and ghost.grid_pos == temp.grid_pos:
                 return False
         return False
     
@@ -256,7 +285,7 @@ class Knight(Piece):
                 return False
         return (dest[0] - curr[0]) ** 2 + (dest[1] - curr[1]) ** 2 == 5
     
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         return self.is_valid_position(self.cell.grid_pos, dest.grid_pos)
     
     def get_valid_moves(self):
@@ -294,9 +323,10 @@ class Bishop(Piece):
                 return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) and (abs(dest[0] - curr[0]) != 0)
     
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
-            return False  
+            return False        
+        global sign_of_number
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
@@ -309,7 +339,7 @@ class Bishop(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None and temp is not ignore:
+            if temp.piece and temp != ignore or ghost and ghost.grid_pos == temp.grid_pos:
                 return False
         return False
     
@@ -346,9 +376,10 @@ class Queen(Piece):
             return False
         return (abs(dest[0] - curr[0]) == abs(dest[1] - curr[1])) or bool(dest[0] - curr[0]) ^ bool(dest[1] - curr[1])
 
-    def is_valid_move(self, dest, ignore = None):
+    def is_valid_move(self, dest, ignore = None, ghost:GhostPiece = None):
         if not self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
             return False
+        global sign_of_number
         diff = (sign_of_number(dest.grid_pos[0] - self.cell.grid_pos[0]), sign_of_number(dest.grid_pos[1] - self.cell.grid_pos[1]))
         for i in range(1,8):
             temp_x = self.cell.grid_pos[0] + diff[0] * i
@@ -361,7 +392,7 @@ class Queen(Piece):
             temp = cell.get_cell(temp_x, temp_y)
             if temp is None:
                 return False
-            if temp.piece is not None and temp is not ignore:
+            if temp.piece and temp != ignore or ghost and ghost.grid_pos == temp.grid_pos:
                 return False
         return False
     
@@ -389,12 +420,17 @@ class King(Piece):
         name = "white-king" if self.team else "black-king"
         self.svg = pngHandler.get_pygame_image(name)
 
-    def in_check(self, check:"cell.Cell") -> bool:
+    def in_check(self, check:"cell.Cell", ignore = None) -> bool:
+        if not ignore:
+            ignore = self.cell
         for x in range(0, 8):
             for y in range(0, 8):
                 threat = cell.get_cell(x, y)
                 if threat and threat.piece and threat.piece.team != self.team:
-                    if (threat.piece.is_valid_move(check, self.cell)):
+                    if isinstance(threat.piece, King):
+                        if threat.piece.is_valid_position(threat.grid_pos, check.grid_pos):
+                            return True
+                    if (threat.piece.is_valid_move(check, ignore)):
                         return True
         return False
 
@@ -407,7 +443,7 @@ class King(Piece):
                 return False
         return 0 < (curr[0] - dest[0]) ** 2 + (curr[1] - dest[1]) ** 2 <= 2
     
-    def is_valid_move(self, dest, ignore=None):
+    def is_valid_move(self, dest, ignore=None, ghost:GhostPiece = None):
         if self.is_castling(dest.grid_pos):
             return True
         if self.is_valid_position(self.cell.grid_pos, dest.grid_pos):
@@ -420,7 +456,7 @@ class King(Piece):
                 temp = cell.get_cell(self.cell.grid_pos[0] + i, self.cell.grid_pos[1] + j)
                 if not temp:
                     continue
-                if self.is_valid_position(self.cell.grid_pos, temp.grid_pos):
+                if self.is_valid_move(temp):
                     result.append(temp)
         # check queenside castling
         if self.is_castling((2, self.cell.grid_pos[1])):

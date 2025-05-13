@@ -2,10 +2,12 @@ import pygame
 from typing import List, Dict
 from src.settings import CELL_SIZE
 from src.settings import CHESS_SURFACE_POSITION, CHESS_SURFACE_SIZE
+from src.chess.globals import ChessTeam
+from src.chess import cell, pieces
 from src.globals import ChessTeam
 from src.chess.util import convert_abs_coords_to_grid_coords
-from src.chess import cell, pieces
 from src.chess.cell import FocusType
+import time
 
 board_rect = None
 board_surface =  None
