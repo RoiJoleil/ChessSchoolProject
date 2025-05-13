@@ -139,7 +139,7 @@ class Pawn(Piece):
         if to_check.grid_pos != dest:
             return False
             
-        return self.is_valid_position((self.cell.grid_pos[0], self.cell.grid_pos[1] + diff_y), pawn_cell.grid_pos)
+        return self.is_valid_position((self.cell.grid_pos[0], self.cell.grid_pos[1] + diff_y), pawn_cell.grid_pos, None)
     
     def is_promote(self) -> bool:
         if self.cell.grid_pos[1] == Territory.line[not self.team]:
