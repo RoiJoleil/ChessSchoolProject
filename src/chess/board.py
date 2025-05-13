@@ -6,8 +6,6 @@ from src.globals import ChessTeam
 from src.chess.util import convert_abs_coords_to_grid_coords
 from src.chess import cell, pieces
 from src.chess.cell import FocusType
-from src.chess import pieces
-import time
 
 board_rect = None
 board_surface =  None
@@ -28,10 +26,6 @@ def init(screen: pygame.Surface):
 def toggle_player_turn():
     global player_turn
     player_turn = not player_turn
-
-def conclude_game():
-    global game_started
-    game_started = False
 
 def reset_game():
     """Reset Game"""
@@ -56,18 +50,6 @@ def load_game():
     global game_started
     game_started = True
     raise NotImplementedError()
-
-def get_all_valid_moves() -> Dict[tuple, List[cell.Cell]]: 
-    """
-    A method to get all the valid moves with the current board state.
-    This method will be used for bots if they are implemented
-    """
-    result = {}
-    for x in range(0,8):
-        for y in range(0,8):
-            temp = cell.get_cell(x, y)
-            result[temp.grid_pos] = temp.piece.get_valid_moves()
-    return result
 
 def select_cell(selected: cell.Cell):
     """Selects a cell to do actions with. 'None' is also a valid argument."""

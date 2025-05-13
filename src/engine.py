@@ -20,6 +20,7 @@ def run():
     while running:
         mouse_pos = pygame.mouse.get_pos()
         mouse_press = pygame.mouse.get_pressed()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
