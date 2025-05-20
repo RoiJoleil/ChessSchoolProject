@@ -145,20 +145,22 @@ def event(event: pygame.event.Event):
     # Return if the game hasnt started yet
     if not game_started:
         return
-    if not pygame.key.get_focused():
-        return
+    
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1: # Leftclick Event
             mouse_pos = pygame.mouse.get_pos()
-            mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
+            mouse_pos = (mouse_pos[0], mouse_pos[1] - 50)
             x, y = convert_abs_coords_to_grid_coords(mouse_pos)
+            
             clicked_cell = cell.get_cell(x, y)
-            if clicked_cell: # TODO: Temporary sollution to avoid crashing when we click outside of the board
+            if clicked_cell:
+
                 # deselect cell by clicking on it again.
                 if selected_cell == clicked_cell:
                     cell.set_focus([selected_cell], FocusType.SELECTED, False)
                     reset_valid_target_cells()
                     select_cell(None)
+
                 # move piece if we have a cell selected.
                 elif selected_cell:
                     cell.set_focus([selected_cell], FocusType.SELECTED, False)
@@ -167,20 +169,24 @@ def event(event: pygame.event.Event):
                     make_move(selected_cell, clicked_cell)
                     cell.prev_move_focus()
                     select_cell(None)
+
                 # select a cell if the clicked cell has a piece.
                 elif clicked_cell.piece:
                     select_cell(clicked_cell)
                     cell.set_focus([selected_cell], FocusType.SELECTED, True)
                     set_valid_target_cells(clicked_cell.piece.get_valid_moves())
+
         # Debug Tool to check contents of a cell with middle mouse click
         elif event.button == 3:
             mouse_pos = pygame.mouse.get_pos()
             mouse_pos = (mouse_pos[0], mouse_pos[1] - 50) # TODO: Actual implement logic for this... to lazy to do it right now
             x, y = convert_abs_coords_to_grid_coords(mouse_pos)
             print(cell.get_cell(x, y))
-    if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_INSERT:
-            replay_history()
+
+    # Not Implemented Yet.
+    # if event.type == pygame.KEYDOWN:
+    #     if event.key == pygame.K_INSERT:
+    #         replay_history()
 
 def draw():
     """Draw the individual chessboard cells"""

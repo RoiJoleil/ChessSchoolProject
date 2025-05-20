@@ -9,6 +9,10 @@ CLOCK = pygame.time.Clock()
 
 FPS = 60
 
+CELL_PNG = "assets/cell"
+PIECE_PNG = "assets/piece"
+FOCUS_PNG = "assets/focus"
+
 CELL_SIZE = 75
 PIECE_SIZE = 75
 

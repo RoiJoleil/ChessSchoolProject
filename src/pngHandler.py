@@ -7,11 +7,7 @@ This module handles loading, storing, accessing and transforming game assets
 import os
 import pygame
 from typing import List
-from src.settings import CELL_SIZE, PIECE_SIZE
-
-CELL_PNG = "assets/cell"
-PIECE_PNG = "assets/piece"
-FOCUS_PNG = "assets/focus"
+from src.settings import CELL_SIZE, PIECE_SIZE, CELL_PNG, PIECE_PNG, FOCUS_PNG
 
 images = {} # {filename: loaded.pygame.image}
 light_tiles = []
@@ -27,7 +23,7 @@ def load_pngs(folder: str, width: int, height: int):
         name, _ = os.path.splitext(png)
         path = os.path.join(folder, png)
         img_raw = pygame.image.load(path).convert_alpha()
-        img_scaled = pygame.transform.smoothscale(img_raw, (width, height))
+        img_scaled = rescale(img_raw, width, height)
         images[name] = img_scaled
 
 def rescale(image: pygame.Surface, width: int, height: int):
