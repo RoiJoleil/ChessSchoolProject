@@ -7,6 +7,10 @@ from src.chess.util import Move, GhostPiece
 from src.chess.promotion import promotion_selection
 
 def sign_of_number(nmb:int) -> int:
+    """
+    Returns:
+        int: 1 if number is positiv -1 if negative and 0 if 0
+    """
     if nmb == 0:
         return 0
     return 1 if nmb > 0 else -1
@@ -142,6 +146,9 @@ class Pawn(Piece):
         return self.is_valid_position((self.cell.grid_pos[0], self.cell.grid_pos[1] + diff_y), pawn_cell.grid_pos, None)
     
     def is_promote(self) -> bool:
+        """
+        Checks if the pawn should be promoted at it's current position
+        """
         if self.cell.grid_pos[1] == Territory.line[not self.team]:
             return True
         return False
